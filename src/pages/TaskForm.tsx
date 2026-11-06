@@ -1,0 +1,297 @@
+import { useState, type FormEvent } from 'react'
+import { supabase } from '../lib/supabase'
+import { errorMessage, useI18n } from '../lib/i18n'
+import { useAuth } from '../auth/AuthProvider'
+import { canEditTask } from '../lib/permissions'
+import { formatDate } from '../lib/dates'
+import type { useLookups } from '../lib/useTeam'
+import { PRIORITIES, SWATCHES, type Label, type Priority, type Task, type TaskStatus } from '../lib/types'
+import { ConfirmDialog, Modal } from '../components/Modal'
+
+interface Props {
+  task: Task
+  lookups: ReturnType<typeof useLookups>
+  onClose: () => void
+  onSaved: (task: Task) => void
+  onDeleted: (id: string) => void
+}
+
+export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) {
+  const { t, locale } = useI18n()
+  const { profile } = useAuth()
+  const editable = canEditTask(profile, task)
+
+  const [title, setTitle] = useState(task.title)
+  const [projectId, setProjectId] = useState(task.project_id)
+  const [deadline, setDeadline] = useState(task.deadline)
+  const [startDate, setStartDate] = useState(task.start_date ?? '')
+  const [status, setStatus] = useState<TaskStatus>(task.status)
+  const [priority, setPriority] = useState<Priority>(task.priority)
+  const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
+  const [reviewerId, setReviewerId] = useState(task.reviewer_id ?? '')
+  const [description, setDescription] = useState(task.description ?? '')
+  const [labelIds, setLabelIds] = useState<string[]>(task.task_labels.map((l) => l.label_id))
+  const [newLabel, setNewLabel] = useState('')
+
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const creator = lookups.people.find((p) => p.id === task.created_by)
+  const projects = lookups.projects.filter((p) => !p.archived || p.id === task.project_id)
+
+  async function addLabel() {
+    const name = newLabel.trim()
+    if (!name) return
+    const existing = lookups.labels.find((l) => l.name.toLowerCase() === name.toLowerCase())
+    if (existing) {
+      setLabelIds((ids) => (ids.includes(existing.id) ? ids : [...ids, existing.id]))
+      setNewLabel('')
+      return
+    }
+    const color = SWATCHES[lookups.labels.length % SWATCHES.length]
+    const { data, error } = await supabase.from('labels').insert({ name, color }).select('id,name,color').single()
+    if (error) return setError(errorMessage(t, error))
+    lookups.setLabels((prev) => [...prev, data as Label].sort((a, b) => a.name.localeCompare(b.name)))
+    setLabelIds((ids) => [...ids, (data as Label).id])
+    setNewLabel('')
+  }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!title.trim() || !projectId || !deadline) return setError(t('taskForm.required'))
+    if (startDate && startDate > deadline) return setError(t('taskForm.startAfterDeadline'))
+    setBusy(true)
+    const { error: updErr } = await supabase
+      .from('tasks')
+      .update({
+        title: title.trim(),
+        project_id: projectId,
+        deadline,
+        start_date: startDate || null,
+        status,
+        priority,
+        assignee_id: assigneeId || null,
+        reviewer_id: reviewerId || null,
+        description: description.trim() || null,
+      })
+      .eq('id', task.id)
+    if (updErr) {
+      setBusy(false)
+      return setError(errorMessage(t, updErr))
+    }
+
+    const before = new Set(task.task_labels.map((l) => l.label_id))
+    const after = new Set(labelIds)
+    const toAdd = [...after].filter((id) => !before.has(id))
+    const toRemove = [...before].filter((id) => !after.has(id))
+    if (toAdd.length) {
+      const { error: e1 } = await supabase.from('task_labels').insert(toAdd.map((label_id) => ({ task_id: task.id, label_id })))
+      if (e1) {
+        setBusy(false)
+        return setError(errorMessage(t, e1))
+      }
+    }
+    if (toRemove.length) {
+      const { error: e2 } = await supabase.from('task_labels').delete().eq('task_id', task.id).in('label_id', toRemove)
+      if (e2) {
+        setBusy(false)
+        return setError(errorMessage(t, e2))
+      }
+    }
+
+    const { data, error: reloadErr } = await supabase.from('tasks').select('*, task_labels(label_id)').eq('id', task.id).single()
+    setBusy(false)
+    if (reloadErr) return setError(errorMessage(t, reloadErr))
+    onSaved(data as Task)
+  }
+
+  async function onDelete() {
+    setBusy(true)
+    const { error } = await supabase.from('tasks').delete().eq('id', task.id)
+    setBusy(false)
+    setConfirmDelete(false)
+    if (error) return setError(errorMessage(t, error))
+    onDeleted(task.id)
+  }
+
+  const people = lookups.people
+
+  return (
+    <>
+      <Modal
+        title={t('taskForm.editTitle')}
+        onClose={onClose}
+        footer={
+          editable ? (
+            <>
+              <button type="button" className="btn btn-ghost btn-danger-text" onClick={() => setConfirmDelete(true)}>
+                {t('common.delete')}
+              </button>
+              <span className="spacer" />
+              <button type="button" className="btn btn-secondary" onClick={onClose}>
+                {t('common.cancel')}
+              </button>
+              <button type="submit" form="task-form" className="btn btn-primary" disabled={busy}>
+                {busy ? t('common.saving') : t('common.save')}
+              </button>
+            </>
+          ) : (
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              {t('common.close')}
+            </button>
+          )
+        }
+      >
+        {!editable && <p className="form-info">{t('taskForm.readOnly')}</p>}
+        <form id="task-form" onSubmit={onSubmit}>
+          <fieldset disabled={!editable} className="form-grid">
+            <div className="field span-2">
+              <label htmlFor="tf-title">
+                {t('taskForm.title')} <span className="req" aria-hidden="true">*</span>
+              </label>
+              <input id="tf-title" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="tf-project">
+                {t('taskForm.project')} <span className="req" aria-hidden="true">*</span>
+              </label>
+              <select id="tf-project" required value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="tf-deadline">
+                {t('taskForm.deadline')} <span className="req" aria-hidden="true">*</span>
+              </label>
+              <input id="tf-deadline" type="date" required value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="tf-status">{t('taskForm.status')}</label>
+              <select id="tf-status" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
+                {(['todo', 'in_progress', 'review', 'done'] as TaskStatus[]).map((s) => (
+                  <option key={s} value={s}>
+                    {t(`status.${s}`)}
+                  </option>
+                ))}
+                {status === 'blocked' && <option value="blocked">{t('status.blocked')}</option>}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="tf-priority">{t('taskForm.priority')}</label>
+              <select id="tf-priority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+                {PRIORITIES.map((p) => (
+                  <option key={p} value={p}>
+                    {t(`priority.${p}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="tf-assignee">{t('taskForm.assignee')}</label>
+              <select id="tf-assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+                <option value="">{t('common.none')}</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name || p.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="tf-reviewer">
+                {t('taskForm.reviewer')} <span className="muted">({t('common.optional')})</span>
+              </label>
+              <select id="tf-reviewer" value={reviewerId} onChange={(e) => setReviewerId(e.target.value)}>
+                <option value="">{t('common.none')}</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name || p.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="tf-start">
+                {t('taskForm.startDate')} <span className="muted">({t('common.optional')})</span>
+              </label>
+              <input id="tf-start" type="date" value={startDate} max={deadline || undefined} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div className="field span-2">
+              <label htmlFor="tf-desc">
+                {t('taskForm.description')} <span className="muted">({t('common.optional')})</span>
+              </label>
+              <textarea id="tf-desc" rows={4} maxLength={5000} value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className="field span-2">
+              <span className="field-label" id="tf-labels-label">
+                {t('taskForm.labels')}
+              </span>
+              <div className="label-picker" role="group" aria-labelledby="tf-labels-label">
+                {lookups.labels.map((l) => {
+                  const on = labelIds.includes(l.id)
+                  return (
+                    <label key={l.id} className={`label-option ${on ? 'is-on' : ''}`} style={on ? { background: l.color } : undefined}>
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) => setLabelIds((ids) => (e.target.checked ? [...ids, l.id] : ids.filter((x) => x !== l.id)))}
+                      />
+                      {l.name}
+                    </label>
+                  )
+                })}
+              </div>
+              <div className="inline-add">
+                <label htmlFor="tf-newlabel" className="sr-only">
+                  {t('taskForm.newLabel')}
+                </label>
+                <input
+                  id="tf-newlabel"
+                  placeholder={t('taskForm.newLabel')}
+                  maxLength={40}
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addLabel()
+                    }
+                  }}
+                />
+                <button type="button" className="btn btn-secondary btn-sm" onClick={addLabel}>
+                  {t('taskForm.addLabel')}
+                </button>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        <p className="muted small">
+          {t('taskForm.createdBy', {
+            name: creator?.full_name || creator?.email || '?',
+            date: formatDate(task.created_at.slice(0, 10), locale),
+          })}
+        </p>
+      </Modal>
+      {confirmDelete && (
+        <ConfirmDialog
+          message={t('taskForm.deleteConfirm', { title: task.title })}
+          confirmLabel={t('common.delete')}
+          busy={busy}
+          onConfirm={onDelete}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+    </>
+  )
+}
