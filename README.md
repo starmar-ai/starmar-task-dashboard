@@ -2,15 +2,16 @@
 
 Task manager internal Starmar AI. Stack: React (Vite + TypeScript) di depan, Supabase (Postgres + login) di belakang, hosting di Vercel. Semua pakai paket gratis.
 
-Status sekarang: **Tahap 1 (Fondasi)**. Isinya login undangan, role Admin/Member, tabel Proyek dan Tugas, tambah/ubah/hapus tugas, label, tema terang/gelap, bahasa Indonesia/Inggris, dan zona waktu (default WIB).
+Status sekarang: **Tahap 2 (Dashboard)**. Tahap 1 berisi login undangan, role Admin/Member, tabel Proyek dan Tugas, tambah/ubah/hapus tugas, label, tema terang/gelap, bahasa Indonesia/Inggris, dan zona waktu (default WIB). Tahap 2 menambah Dashboard sebagai halaman pertama setelah login: jumlah tugas yang harus selesai (telat dipisah), filter proyek dan periode (hari ini, 7 hari, 1 bulan, pilih tanggal), Fokus hari ini, Perlu perhatian, grafik per proyek yang bisa diklik, dan Rincian. Tahap 2 tidak butuh perubahan database.
 
 ## Struktur
 
 | Folder / file | Isi |
 |---|---|
-| `src/pages` | Halaman: Tugas, Proyek, Pengaturan, Login, Buat password |
+| `src/pages` | Halaman: Dashboard, Tugas, Proyek, Pengaturan, Login, Buat password |
 | `src/components` | Sidebar, modal, chip status/prioritas, tampilan kosong/loading/error |
-| `src/lib` | Koneksi Supabase, teks UI (ID/EN), tipe data, tanggal |
+| `src/lib` | Koneksi Supabase, teks UI (ID/EN), tipe data, tanggal, hitungan Dashboard |
+| `tests` | Tes hitungan Dashboard (`npm test`) |
 | `supabase/migrations` | Skema database + aturan akses (row level security) |
 | `DESIGN.md` | Arah desain (palet, gaya, dial) |
 
@@ -65,4 +66,4 @@ npm run dev                 # buka http://localhost:5173
 
 Buat akun lokal pertama lewat Supabase Studio lokal (`http://127.0.0.1:54323`) > Authentication > Add user.
 
-Cek sebelum push: `npm run build` (typecheck + build).
+Cek sebelum push: `npm test` (hitungan Dashboard) dan `npm run build` (typecheck + build).

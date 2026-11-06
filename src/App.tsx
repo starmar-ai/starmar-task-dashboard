@@ -7,6 +7,7 @@ import { AppShell } from './components/AppShell'
 import { ErrorState, LoadingState } from './components/States'
 import { LoginPage } from './pages/LoginPage'
 import { SetPasswordPage } from './pages/SetPasswordPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { TasksPage } from './pages/TasksPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -28,7 +29,7 @@ function NotFound() {
   return (
     <div className="page">
       <h1>{t('notFound.title')}</h1>
-      <Link to="/tasks" className="btn btn-secondary">
+      <Link to="/dashboard" className="btn btn-secondary">
         {t('notFound.back')}
       </Link>
     </div>
@@ -60,7 +61,8 @@ function Gate() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<Navigate to="/tasks" replace />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="settings" element={<SettingsPage />} />
