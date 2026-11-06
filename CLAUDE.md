@@ -1,5 +1,9 @@
 # Starmar AI Task Dashboard
 
+## Design direction and antislop mode
+- For any UI work, read `DESIGN.md` first for direction (palette, style, dials), then apply antislop as the filter.
+- Standing session instruction from the project owner: use antislop **during** mode in every session of this project. Treat it as the explicit session choice (`antislop active: during (session override).`) and do not ask the during/after question.
+
 <!-- antislop:start -->
 ## antislop
 For UI, copy, people, mobile layout, or code comments work, read these installed skill files directly (use these paths even if a same-named global skill exists):
