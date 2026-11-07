@@ -2721,3 +2721,295 @@ a.resource-name:hover {
 .date-change dd {
   margin: 0;
 }
+
+/* Calendar: month grid of deadlines across all projects. Each task wears its project color with the title as text, so color is never the only cue. */
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.cal-month {
+  font-size: 1.25rem;
+  min-width: 10ch;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.cal-grid {
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.cal-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.cal-row + .cal-row {
+  border-top: 2px solid var(--line);
+}
+
+.cal-weekday {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.cal-day {
+  position: relative;
+  min-height: 7.5rem;
+  min-width: 0;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.cal-day + .cal-day {
+  border-left: 1px solid color-mix(in srgb, var(--line) 35%, transparent);
+}
+
+.cal-day.is-outside {
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+.cal-day.is-outside .cal-date {
+  color: var(--muted);
+}
+
+.cal-day.is-selected {
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.cal-date {
+  align-self: flex-start;
+  min-width: 1.9rem;
+  height: 1.9rem;
+  padding: 0 0.35rem;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cal-date:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.cal-day.is-today .cal-date {
+  border-color: var(--coral);
+}
+
+.cal-today-tag {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.cal-day.is-today::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--coral);
+}
+
+.cal-day-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.cal-task {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.1rem 0.45rem;
+  border: 2px solid var(--indigo);
+  border-radius: 999px;
+  color: var(--indigo);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--speed), box-shadow var(--speed);
+}
+
+.cal-task:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.cal-task:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.cal-task:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.cal-task-glyph {
+  flex: none;
+  font-weight: 800;
+}
+
+.cal-task-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cal-task.is-done .cal-task-title {
+  text-decoration: line-through;
+}
+
+/* Late: thick coral ring plus the "!" glyph. */
+.cal-task.is-late {
+  box-shadow: 0 0 0 2px var(--coral);
+}
+
+.cal-more {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  padding-left: 0.3rem;
+}
+
+.cal-dots {
+  display: none;
+}
+
+.cal-agenda {
+  margin-top: 1rem;
+}
+
+.cal-agenda-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.cal-agenda-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cal-agenda-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--speed), box-shadow var(--speed);
+}
+
+.cal-agenda-item:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-agenda-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.cal-agenda-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.cal-agenda-side {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Phones: cells only show a count; the list under the grid carries the tasks of the tapped day. */
+@media (max-width: 760px) {
+  .cal-day {
+    min-height: 3.6rem;
+    padding: 0.2rem;
+    align-items: center;
+  }
+
+  .cal-date {
+    align-self: center;
+  }
+
+  .cal-day-tasks,
+  .cal-today-tag {
+    display: none;
+  }
+
+  .cal-dots {
+    display: inline-block;
+    min-width: 1.3rem;
+    padding: 0 0.3rem;
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+    background: var(--periwinkle);
+    color: var(--indigo);
+  }
+
+  .cal-dots.is-late {
+    background: var(--coral);
+  }
+
+  .cal-weekday {
+    text-align: center;
+    padding: 0.3rem 0;
+  }
+
+  .cal-agenda-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cal-agenda-side {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-task,
+  .cal-agenda-item {
+    transition: none;
+  }
+}
