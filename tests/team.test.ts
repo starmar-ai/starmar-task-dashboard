@@ -19,6 +19,7 @@ test('admin, PM, and members can open a project; revoked people cannot', () => {
   assert.equal(canOpenProject(fauzi, web, members), false)
   assert.equal(canOpenProject(fauzi, ads, members), true)
   assert.equal(canOpenProject(gone, web, members), false)
+  assert.equal(canOpenProject(fadli, undefined, members), true)
   assert.equal(canOpenProject(alfa, undefined, members), false)
 })
 
@@ -33,4 +34,13 @@ test('invite state', () => {
   assert.equal(inviteState({ active: true }, { user_id: 'x', invited_at: '2026-11-07', joined_at: null, last_sign_in_at: null }), 'pending')
   assert.equal(inviteState({ active: true }, { user_id: 'x', invited_at: '2026-11-07', joined_at: '2026-11-07', last_sign_in_at: null }), 'active')
   assert.equal(inviteState({ active: true }, undefined), 'active')
+})
+
+test('a new task with no project chosen offers every active person', () => {
+  const people = [fadli, alfa, fauzi, gone]
+  assert.deepEqual(pickablePeople(people, undefined, members).map((p) => p.id), ['fadli', 'alfa', 'fauzi'])
+})
+
+test('the admin is never filtered out of a project picker', () => {
+  assert.deepEqual(pickablePeople([fadli], web, []).map((p) => p.id), ['fadli'])
 })
