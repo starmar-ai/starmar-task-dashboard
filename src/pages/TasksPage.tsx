@@ -185,7 +185,7 @@ export function TasksPage() {
             <legend className="sr-only">{t('view.label')}</legend>
             {VIEWS.map((v) => (
               <label key={v} className={view === v ? 'is-on' : ''}>
-                <input type="radio" name="task-view" checked={view === v} onChange={() => setParam('view', v === 'board' ? 'board' : '')} />
+                <input type="radio" name="task-view" checked={view === v} onChange={() => setParam('view', v === 'table' ? '' : v)} />
                 {t(`view.${v}`)}
               </label>
             ))}
