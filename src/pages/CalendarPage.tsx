@@ -32,8 +32,18 @@ export function CalendarPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Task | null>(null)
   const [selected, setSelected] = useState<string>(today)
-  const agendaRef = useRef<HTMLElement>(null)
   const [showDone, setShowDone] = useState(true)
+  const agendaRef = useRef<HTMLElement>(null)
+
+  /** Pick a day and bring its full task list into view. */
+  function openDay(d: string) {
+    setSelected(d)
+    requestAnimationFrame(() => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      agendaRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+      agendaRef.current?.focus({ preventScroll: true })
+    })
+  }
 
   const load = useCallback(async () => {
     setLoadError(null)
@@ -216,14 +226,14 @@ export function CalendarPage() {
                       role="gridcell"
                       aria-selected={d === selected}
                       className={`cal-day ${outside ? 'is-outside' : ''} ${isToday ? 'is-today' : ''} ${d === selected ? 'is-selected' : ''}`}
-                      onClick={() => setSelected(d)}
+                      onClick={() => (window.matchMedia('(max-width: 760px)').matches ? openDay(d) : setSelected(d))}
                     >
                       <button
                         type="button"
                         className="cal-date"
                         onClick={(e) => {
                           e.stopPropagation()
-                          setSelected(d)
+                          openDay(d)
                         }}
                         aria-label={`${formatDate(d, locale)}${isToday ? `, ${t('gantt.today')}` : ''}, ${t('cal.dayCount', { n: list.length })}`}
                       >
@@ -238,8 +248,7 @@ export function CalendarPage() {
                             className="cal-more"
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelected(d)
-                              requestAnimationFrame(() => agendaRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }))
+                              openDay(d)
                             }}
                             aria-label={`${t('cal.more', { n: list.length - MAX_IN_CELL })}, ${formatDate(d, locale)}`}
                           >
@@ -259,7 +268,7 @@ export function CalendarPage() {
             ))}
           </div>
 
-          <section className="card cal-agenda" aria-live="polite" ref={agendaRef}>
+          <section ref={agendaRef} tabIndex={-1} className="card cal-agenda" aria-live="polite">
             <h2 className="cal-agenda-title">
               {formatDate(selected, locale)}
               {selected === today && <span className="chip chip-today">{t('gantt.today')}</span>}
