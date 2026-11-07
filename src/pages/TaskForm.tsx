@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { removeFilesOfTasks } from '../lib/taskFiles'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { canEditTask } from '../lib/permissions'
@@ -7,6 +8,8 @@ import { formatDate } from '../lib/dates'
 import type { useLookups } from '../lib/useTeam'
 import { PRIORITIES, SWATCHES, type Label, type Priority, type Task, type TaskStatus } from '../lib/types'
 import { ConfirmDialog, Modal } from '../components/Modal'
+import { TaskComments } from '../components/TaskComments'
+import { TaskFiles } from '../components/TaskFiles'
 
 interface Props {
   task: Task
@@ -109,6 +112,8 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
 
   async function onDelete() {
     setBusy(true)
+    // Best effort: a failed file cleanup must not block deleting the task.
+    await removeFilesOfTasks({ taskId: task.id })
     const { error } = await supabase.from('tasks').delete().eq('id', task.id)
     setBusy(false)
     setConfirmDelete(false)
@@ -282,6 +287,8 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
             date: formatDate(task.created_at.slice(0, 10), locale),
           })}
         </p>
+        <TaskFiles taskId={task.id} canManage={editable} people={people} />
+        <TaskComments taskId={task.id} people={people} />
       </Modal>
       {confirmDelete && (
         <ConfirmDialog

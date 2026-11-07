@@ -65,3 +65,31 @@ export const PROJECT_STATUSES: ProjectStatus[] = ['perencanaan', 'aktif', 'ditun
 export const SWATCHES = ['#FFD23F', '#FF6B57', '#5DBDB0', '#8FA8F0', '#C3A6F0', '#F7A072', '#9ED36A', '#F49AC2']
 
 export const TIMEZONES = ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura']
+
+export interface TaskComment {
+  id: string
+  task_id: string
+  author_id: string | null
+  body: string
+  created_at: string
+}
+
+export interface TaskLink {
+  id: string
+  task_id: string
+  url: string
+  label: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export interface TaskAttachment {
+  id: string
+  task_id: string
+  storage_path: string
+  file_name: string
+  size_bytes: number
+  mime_type: string | null
+  uploaded_by: string | null
+  created_at: string
+}

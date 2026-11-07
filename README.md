@@ -4,6 +4,16 @@ Task manager internal Starmar AI. Stack: React (Vite + TypeScript) di depan, Sup
 
 Status sekarang: **Tahap 2 (Dashboard)**. Tahap 1 berisi login undangan, role Admin/Member, tabel Proyek dan Tugas, tambah/ubah/hapus tugas, label, tema terang/gelap, bahasa Indonesia/Inggris, dan zona waktu (default WIB). Tahap 2 menambah Dashboard sebagai halaman pertama setelah login: jumlah tugas yang harus selesai (telat dipisah), filter proyek dan periode (hari ini, 7 hari, 1 bulan, pilih tanggal), Fokus hari ini, Perlu perhatian, grafik per proyek yang bisa diklik, dan Rincian. Tahap 2 tidak butuh perubahan database.
 
+## Update database: komentar, link, dan file di tugas
+
+Fitur ini butuh tabel baru dan tempat simpan file di Supabase. Jalankan sekali saja:
+
+1. Buka Supabase > project kamu > **SQL Editor** > **New query**.
+2. Copy semua isi file `supabase/migrations/20261107040000_task_comments_links_files.sql`, paste, lalu klik **Run**. Harus muncul "Success. No rows returned".
+3. Cek di menu **Storage**: harus ada bucket `task-files` (Private).
+
+Aturannya: semua orang yang bisa lihat tugas boleh komentar, tambah link, dan upload file. Yang boleh hapus link/file: yang menambahkan, pemilik tugas (assignee atau pembuat), atau admin. Komentar hanya bisa dihapus penulisnya atau admin. File maksimal 5 MB, dicek di aplikasi dan di Supabase. Kuota penyimpanan paket gratis Supabase 1 GB untuk semua file.
+
 ## Struktur
 
 | Folder / file | Isi |

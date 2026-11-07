@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { removeFilesOfTasks } from '../lib/taskFiles'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { PROJECT_STATUSES, SWATCHES, type Profile, type ProjectOverview, type ProjectStatus } from '../lib/types'
@@ -85,6 +86,8 @@ export function ProjectForm({ project, people, onClose, onSaved }: Props) {
   async function onDelete() {
     if (!project) return
     setBusy(true)
+    // Best effort: a failed file cleanup must not block deleting the project.
+    await removeFilesOfTasks({ projectId: project.id })
     const { error } = await supabase.from('projects').delete().eq('id', project.id)
     setBusy(false)
     setConfirmDelete(false)

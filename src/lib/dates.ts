@@ -26,3 +26,14 @@ export function formatDate(iso: string | null, locale: Locale): string {
     timeZone: 'UTC',
   }).format(new Date(`${iso}T00:00:00Z`))
 }
+
+/** Date and time of a timestamp, shown in the user's timezone. */
+export function formatDateTime(iso: string, locale: Locale, timezone: string): string {
+  return new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: timezone,
+  }).format(new Date(iso))
+}
