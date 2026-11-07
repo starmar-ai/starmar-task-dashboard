@@ -43,7 +43,12 @@ export async function handleTeam(request: Request, backend: TeamBackend | null):
   if (!backend) return json(503, { error: 'server_not_configured' })
 
   const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
-  const caller = token ? await backend.callerFromToken(token) : null
+  let caller: Caller | null = null
+  try {
+    caller = token ? await backend.callerFromToken(token) : null
+  } catch (err) {
+    return json(500, { error: 'failed', detail: err instanceof Error ? err.message : String(err) })
+  }
   if (!caller || caller.role !== 'admin' || !caller.active) return json(403, { error: 'admin_only' })
 
   let body: TeamAction
@@ -115,7 +120,9 @@ function supabaseBackend(): TeamBackend | null {
     async callerFromToken(token) {
       const { data, error } = await db.auth.getUser(token)
       if (error || !data.user) return null
-      const { data: p } = await db.from('profiles').select('id, role, active').eq('id', data.user.id).maybeSingle()
+      // A failed read (wrong key, missing column) must not look like "not an admin".
+      const { data: p, error: profileError } = await db.from('profiles').select('id, role, active').eq('id', data.user.id).maybeSingle()
+      if (profileError) throw new Error(`profiles: ${profileError.message}`)
       return (p as Caller | null) ?? null
     },
     async findProfileByEmail(email) {

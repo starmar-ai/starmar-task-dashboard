@@ -129,3 +129,14 @@ test('email rate limit comes back as its own error', async () => {
   const res = await handleTeam(req('admin', { action: 'invite', email: 'c@example.com', send_email: true }), backend)
   assert.equal(res.status, 429)
 })
+
+test('a failing caller lookup is a server error, not a silent admin_only', async () => {
+  const { backend } = fakeBackend({
+    callerFromToken: async () => {
+      throw new Error('profiles: permission denied for table profiles')
+    },
+  })
+  const res = await handleTeam(req('admin', { action: 'invite', email: 'a@example.com' }), backend)
+  assert.equal(res.status, 500)
+  assert.match((await res.json()).detail, /permission denied/)
+})
