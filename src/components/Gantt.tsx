@@ -147,11 +147,12 @@ export function Gantt({ rows, edges = [], today, onOpen, onChange, nameHeader }:
     if (e.currentTarget.hasPointerCapture(p.pointer)) e.currentTarget.releasePointerCapture(p.pointer)
     const delta = drag?.id === row.id ? drag.delta : 0
     setDrag(null)
-    if (p.moved) {
-      justDragged.current = true
-      setTimeout(() => (justDragged.current = false), 0)
-      if (delta !== 0) onChange?.(row.id, shiftDates(row.noStart ? null : row.start, row.end, p.mode, delta))
-    }
+    // A mouse press that did not move opens the task right here instead of waiting for `click`,
+    // which some browsers skip after pointer capture. The click that follows is then ignored.
+    justDragged.current = true
+    setTimeout(() => (justDragged.current = false), 50)
+    if (!p.moved) return onOpen(row.id)
+    if (delta !== 0) onChange?.(row.id, shiftDates(row.noStart ? null : row.start, row.end, p.mode, delta))
   }
 
   function onCancel(row: GanttRow) {
