@@ -14,6 +14,7 @@ import { TaskDependencies } from '../components/TaskDependencies'
 import { ReviewButtons, useTaskMover } from '../components/TaskMover'
 import { TaskComments } from '../components/TaskComments'
 import { TaskFiles } from '../components/TaskFiles'
+import { DateChangeDialog, sameDates } from '../components/TaskDateChange'
 
 interface Props {
   task: Task
@@ -47,6 +48,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmDates, setConfirmDates] = useState(false)
 
   const mover = useTaskMover(() => {
     onChanged?.()
@@ -81,6 +83,13 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
     setError(null)
     if (!title.trim() || !projectId || !deadline) return setError(t('taskForm.required'))
     if (startDate && startDate > deadline) return setError(t('taskForm.startAfterDeadline'))
+    const datesChanged = !sameDates({ start: task.start_date, end: task.deadline }, { start: startDate || null, end: deadline })
+    if (datesChanged && !confirmDates) return setConfirmDates(true)
+    await save()
+  }
+
+  async function save() {
+    setConfirmDates(false)
     setBusy(true)
     const { error: updErr } = await supabase
       .from('tasks')
@@ -363,6 +372,18 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
           busy={busy}
           onConfirm={onDelete}
           onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      {confirmDates && (
+        <DateChangeDialog
+          title={task.title}
+          before={{ start: task.start_date, end: task.deadline }}
+          after={{ start: startDate || null, end: deadline }}
+          hasDependencies={false}
+          busy={busy}
+          error={null}
+          onConfirm={save}
+          onCancel={() => setConfirmDates(false)}
         />
       )}
       {mover.dialog}

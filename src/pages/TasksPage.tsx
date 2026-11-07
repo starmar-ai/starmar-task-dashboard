@@ -7,15 +7,18 @@ import { useLookups } from '../lib/useTeam'
 import { daysBetween, formatDate, todayIn } from '../lib/dates'
 import { canReview, indexDependencies } from '../lib/taskFlow'
 import type { Task, TaskDependency, TaskStatus } from '../lib/types'
-import { LabelTag, PriorityChip, ProjectName } from '../components/Chips'
+import { LabelTag, PriorityChip, ProjectName, STATUS_GLYPH } from '../components/Chips'
 import { EmptyState, ErrorState, LoadingState } from '../components/States'
 import { TaskBoard } from '../components/TaskBoard'
+import { Gantt, type GanttEdge, type GanttRow } from '../components/Gantt'
+import { useDateChange } from '../components/TaskDateChange'
+import { canEditTask } from '../lib/permissions'
 import { ReviewButtons, useTaskMover } from '../components/TaskMover'
 import { TaskStatusControl } from '../components/TaskStatusControl'
 import { TaskForm } from './TaskForm'
 
-type View = 'table' | 'board'
-const VIEWS: View[] = ['table', 'board']
+type View = 'table' | 'board' | 'gantt'
+const VIEWS: View[] = ['table', 'board', 'gantt']
 
 export function TasksPage() {
   const { t, locale } = useI18n()
@@ -23,7 +26,7 @@ export function TasksPage() {
   const lookups = useLookups()
   const [params, setParams] = useSearchParams()
   const projectFilter = params.get('project') ?? ''
-  const view: View = params.get('view') === 'board' ? 'board' : 'table'
+  const view: View = params.get('view') === 'board' ? 'board' : params.get('view') === 'gantt' ? 'gantt' : 'table'
   const [showDone, setShowDone] = useState(false)
 
   const [tasks, setTasks] = useState<Task[]>([])
@@ -58,6 +61,8 @@ export function TasksPage() {
   }, [])
 
   const mover = useTaskMover(load, (taskId, status) => setTasks((prev) => prev.map((x) => (x.id === taskId ? { ...x, status } : x))))
+
+  const dateChange = useDateChange(load)
 
   useEffect(() => {
     load()
@@ -101,7 +106,40 @@ export function TasksPage() {
   })
   const visible = inScope.filter((task) => showDone || task.status !== 'done')
   const currentProject = projectFilter ? projectById.get(projectFilter) : undefined
-  const shownCount = view === 'board' ? inScope.length : visible.length
+  const shownCount = view === 'table' ? visible.length : inScope.length
+
+  const ganttRows = useMemo<GanttRow[]>(() => {
+    if (view !== 'gantt') return []
+    return [...inScope]
+      .sort((a, b) => (a.start_date ?? a.deadline).localeCompare(b.start_date ?? b.deadline) || a.deadline.localeCompare(b.deadline))
+      .map((task) => {
+        const waiting = task.status === 'blocked' ? waitingTitles(task) : []
+        const late = task.status !== 'done' ? daysBetween(task.deadline, today) : 0
+        const project = projectById.get(task.project_id)
+        const assignee = task.assignee_id ? personById.get(task.assignee_id) : null
+        const range = task.start_date ? `${formatDate(task.start_date, locale)} – ${formatDate(task.deadline, locale)}` : t('gantt.deadlineOnly', { date: formatDate(task.deadline, locale) })
+        return {
+          id: task.id,
+          label: task.title,
+          sub: waiting.length ? t('tasks.waitingFor', { titles: waiting.join(', ') }) : projectFilter ? assignee?.full_name : project?.name,
+          flag: late > 0 ? t('tasks.overdue', { n: late }) : undefined,
+          tone: task.status,
+          glyph: STATUS_GLYPH[task.status],
+          start: task.start_date ?? task.deadline,
+          end: task.deadline,
+          noStart: !task.start_date,
+          editable: canEditTask(profile, task),
+          title: `${task.title}. ${t(`status.${task.status}`)}. ${range}`,
+        }
+      })
+    // waitingTitles reads depIndex and taskById, which change together with tasks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, inScope, today, projectById, personById, locale, profile, depIndex, taskById, projectFilter])
+
+  const ganttEdges = useMemo<GanttEdge[]>(() => {
+    const ids = new Set(ganttRows.map((r) => r.id))
+    return deps.filter((d) => ids.has(d.task_id) && ids.has(d.depends_on_id)).map((d) => ({ from: d.depends_on_id, to: d.task_id }))
+  }, [ganttRows, deps])
 
   async function onQuickAdd(e: FormEvent) {
     e.preventDefault()
@@ -147,7 +185,7 @@ export function TasksPage() {
             <legend className="sr-only">{t('view.label')}</legend>
             {VIEWS.map((v) => (
               <label key={v} className={view === v ? 'is-on' : ''}>
-                <input type="radio" name="task-view" checked={view === v} onChange={() => setParam('view', v === 'board' ? 'board' : '')} />
+                <input type="radio" name="task-view" checked={view === v} onChange={() => setParam('view', v === 'table' ? '' : v)} />
                 {t(`view.${v}`)}
               </label>
             ))}
@@ -243,6 +281,20 @@ export function TasksPage() {
         />
       ) : noProjects ? null : inScope.length === 0 ? (
         <EmptyState>{t('tasks.empty')}</EmptyState>
+      ) : view === 'gantt' ? (
+        <Gantt
+          rows={ganttRows}
+          edges={ganttEdges}
+          today={today}
+          nameHeader={t('tasks.col.task')}
+          onOpen={(id) => setEditing(taskById.get(id) ?? null)}
+          onChange={(id, next) => {
+            const task = taskById.get(id)
+            if (!task) return
+            const linked = depIndex.waitsFor.has(id) || depIndex.waitedBy.has(id)
+            dateChange.request(task, next, linked)
+          }}
+        />
       ) : view === 'board' ? (
         <TaskBoard
           tasks={inScope}
@@ -345,6 +397,7 @@ export function TasksPage() {
         />
       )}
       {mover.dialog}
+      {dateChange.dialog}
     </div>
   )
 }

@@ -37,3 +37,8 @@ export function formatDateTime(iso: string, locale: Locale, timezone: string): s
     timeZone: timezone,
   }).format(new Date(iso))
 }
+
+/** YYYY-MM-DD moved by n days (negative goes back). Calendar math in UTC, so no daylight-saving drift. */
+export function addDays(iso: string, n: number): string {
+  return new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10)
+}

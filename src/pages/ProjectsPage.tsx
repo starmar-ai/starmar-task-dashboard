@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { useLookups } from '../lib/useTeam'
-import { formatDate } from '../lib/dates'
+import { formatDate, todayIn } from '../lib/dates'
 import type { ProjectOverview } from '../lib/types'
 import { ProjectName, ProjectStatusChip, RiskChip } from '../components/Chips'
 import { EmptyState, ErrorState, LoadingState } from '../components/States'
+import { Gantt, type GanttRow } from '../components/Gantt'
 import { ProjectForm } from './ProjectForm'
 
 export function ProjectsPage() {
@@ -16,6 +17,8 @@ export function ProjectsPage() {
   const lookups = useLookups()
   const isAdmin = profile?.role === 'admin'
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
+  const view = params.get('view') === 'timeline' ? 'timeline' : 'table'
 
   const [rows, setRows] = useState<ProjectOverview[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,6 +42,34 @@ export function ProjectsPage() {
   const visible = rows.filter((r) => showArchived || !r.archived)
   const archivedCount = rows.filter((r) => r.archived).length
 
+  const today = todayIn(profile?.timezone ?? 'Asia/Jakarta')
+  const timelineRows = useMemo<GanttRow[]>(
+    () =>
+      visible
+        .filter((p) => p.first_date && p.last_deadline)
+        .sort((a, b) => (a.first_date as string).localeCompare(b.first_date as string))
+        .map((p) => {
+          const pct = p.task_total ? p.task_done / p.task_total : 0
+          const period = `${formatDate(p.first_date, locale)} – ${formatDate(p.last_deadline, locale)}`
+          const progress = t('projects.progressLabel', { done: p.task_done, total: p.task_total })
+          return {
+            id: p.id,
+            label: p.name,
+            sub: p.at_risk ? `${t('projects.atRisk')}. ${progress}` : progress,
+            flag: p.task_overdue > 0 ? t('projects.overdueCount', { n: p.task_overdue }) : undefined,
+            color: p.color,
+            glyph: p.at_risk ? '!' : undefined,
+            barText: `${Math.round(pct * 100)}%`,
+            progress: pct,
+            start: p.first_date as string,
+            end: p.last_deadline as string,
+            title: `${p.name}. ${t(`pstatus.${p.status}`)}. ${period}. ${progress}`,
+          }
+        }),
+    [visible, locale, t],
+  )
+  const withoutTasks = visible.length - timelineRows.length
+
   function closeForm() {
     setEditing(null)
     if (params.get('new')) setParams({})
@@ -51,6 +82,30 @@ export function ProjectsPage() {
           <h1>{t('projects.title')}</h1>
         </div>
         <div className="filters">
+          <fieldset className="segmented segmented-sm view-switch">
+            <legend className="sr-only">{t('view.label')}</legend>
+            {(['table', 'timeline'] as const).map((v) => (
+              <label key={v} className={view === v ? 'is-on' : ''}>
+                <input
+                  type="radio"
+                  name="project-view"
+                  checked={view === v}
+                  onChange={() =>
+                    setParams(
+                      (prev) => {
+                        const next = new URLSearchParams(prev)
+                        if (v === 'timeline') next.set('view', v)
+                        else next.delete('view')
+                        return next
+                      },
+                      { replace: true },
+                    )
+                  }
+                />
+                {t(`view.${v}`)}
+              </label>
+            ))}
+          </fieldset>
           {archivedCount > 0 && (
             <label className="check">
               <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
@@ -81,6 +136,16 @@ export function ProjectsPage() {
         >
           {isAdmin ? t('projects.empty') : t('projects.emptyMember')}
         </EmptyState>
+      ) : view === 'timeline' ? (
+        timelineRows.length === 0 ? (
+          <EmptyState>{t('timeline.empty')}</EmptyState>
+        ) : (
+          <>
+            <p className="muted small">{t('timeline.hint')}</p>
+            <Gantt rows={timelineRows} today={today} nameHeader={t('projects.col.project')} onOpen={(id) => navigate(`/tasks?project=${id}&view=gantt`)} />
+            {withoutTasks > 0 && <p className="muted small">{t('timeline.noTasks', { n: withoutTasks })}</p>}
+          </>
+        )
       ) : (
         <div className="table-wrap">
           <table className="data-table project-table">
