@@ -1698,6 +1698,338 @@ a.resource-name:hover {
   align-self: flex-start;
 }
 
+/* Stage 3: tasks per project, board, waiting list, review ------------- */
+
+.page-kicker {
+  margin-bottom: 0.15rem;
+  font-weight: 700;
+}
+
+.project-title .swatch {
+  width: 20px;
+  height: 20px;
+}
+
+.status-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.review-buttons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Approve finishes the task, so it wears the Done colour. */
+.btn-approve {
+  background: var(--teal-light);
+  color: var(--on-color);
+}
+
+.row-note {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* A rejection note asks for action, so it shares the coral "needs attention" colour. */
+.chip-note {
+  margin-top: 0.3rem;
+  background: var(--coral);
+  color: var(--on-color);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chip-note:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Board: four columns in the order work moves. Columns are quiet containers; cards carry the shadow because they are what you grab. */
+.board-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.board-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  min-height: 160px;
+  padding: 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  transition: opacity var(--speed) ease;
+}
+
+.board-col.is-open {
+  border-style: dashed;
+}
+
+.board-col.is-over {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--yellow) 30%, var(--surface-2));
+}
+
+.board-col.is-closed {
+  opacity: 0.45;
+}
+
+.board-col-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.board-count {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.board-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-empty {
+  padding: 0.75rem;
+  border: 2px dashed color-mix(in srgb, var(--line) 45%, transparent);
+  border-radius: var(--radius-input);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.board-card.is-draggable {
+  cursor: grab;
+}
+
+.board-card.is-dragging {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.board-card.is-blocked {
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.board-card.is-overdue {
+  box-shadow: 3px 3px 0 var(--coral);
+}
+
+.board-card-title {
+  text-align: left;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.board-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+}
+
+.board-card-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.board-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.board-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.board-assignee .avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 0.72rem;
+}
+
+.board-card .chip-select {
+  max-width: 100%;
+}
+
+.board-more {
+  align-self: flex-start;
+}
+
+/* Task window: reviewer note, review bar, waiting list */
+.review-note {
+  padding: 0.7rem 0.9rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+}
+
+.review-note-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.review-note-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.review-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--yellow);
+  color: var(--on-color);
+  font-weight: 700;
+  --text: var(--indigo);
+  --line: var(--indigo);
+  --shadow: var(--indigo);
+  --surface: #ffffff;
+}
+
+.reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dep {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+}
+
+.dep-late {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dep-waited {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dep-chips li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dep-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+/* Below this width four columns get too narrow to read; the board scrolls sideways inside its own box instead. */
+@media (max-width: 1100px) {
+  .board {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+    overscroll-behavior-x: contain;
+  }
+
+  .board-col {
+    flex: 0 0 min(300px, 82%);
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .view-switch {
+    width: 100%;
+  }
+
+  .view-switch label {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .dep {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .dep .chip {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .review-buttons .btn {
+    flex: 1 1 auto;
+  }
+}
+
 /* Mid widths: keep the sidebar, let the quick-add form wrap. */
 @media (max-width: 1100px) {
   .quick-add {

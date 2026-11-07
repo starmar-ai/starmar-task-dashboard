@@ -5,13 +5,17 @@ import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { useLookups } from '../lib/useTeam'
 import { daysBetween, formatDate, todayIn } from '../lib/dates'
-import { canEditTask } from '../lib/permissions'
-import type { Task, TaskStatus } from '../lib/types'
-import { LabelTag, PriorityChip, ProjectName, StatusChip } from '../components/Chips'
+import { canReview, indexDependencies } from '../lib/taskFlow'
+import type { Task, TaskDependency, TaskStatus } from '../lib/types'
+import { LabelTag, PriorityChip, ProjectName } from '../components/Chips'
 import { EmptyState, ErrorState, LoadingState } from '../components/States'
+import { TaskBoard } from '../components/TaskBoard'
+import { ReviewButtons, useTaskMover } from '../components/TaskMover'
+import { TaskStatusControl } from '../components/TaskStatusControl'
 import { TaskForm } from './TaskForm'
 
-const EDITABLE_STATUSES: TaskStatus[] = ['todo', 'in_progress', 'review', 'done']
+type View = 'table' | 'board'
+const VIEWS: View[] = ['table', 'board']
 
 export function TasksPage() {
   const { t, locale } = useI18n()
@@ -19,12 +23,13 @@ export function TasksPage() {
   const lookups = useLookups()
   const [params, setParams] = useSearchParams()
   const projectFilter = params.get('project') ?? ''
+  const view: View = params.get('view') === 'board' ? 'board' : 'table'
   const [showDone, setShowDone] = useState(false)
 
   const [tasks, setTasks] = useState<Task[]>([])
+  const [deps, setDeps] = useState<TaskDependency[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Task | null>(null)
 
   const [title, setTitle] = useState('')
@@ -39,11 +44,20 @@ export function TasksPage() {
 
   const load = useCallback(async () => {
     setLoadError(null)
-    const { data, error } = await supabase.from('tasks').select('*, task_labels(label_id)').order('deadline').order('created_at')
+    const [taskRes, depRes] = await Promise.all([
+      supabase.from('tasks').select('*, task_labels(label_id)').order('deadline').order('created_at'),
+      supabase.from('task_dependencies').select('task_id, depends_on_id'),
+    ])
+    const error = taskRes.error || depRes.error
     if (error) setLoadError(error.message)
-    else setTasks(data as Task[])
+    else {
+      setTasks(taskRes.data as Task[])
+      setDeps(depRes.data as TaskDependency[])
+    }
     setLoading(false)
   }, [])
+
+  const mover = useTaskMover(load, (taskId, status) => setTasks((prev) => prev.map((x) => (x.id === taskId ? { ...x, status } : x))))
 
   useEffect(() => {
     load()
@@ -53,6 +67,28 @@ export function TasksPage() {
   const projectById = useMemo(() => new Map(lookups.projects.map((p) => [p.id, p])), [lookups.projects])
   const personById = useMemo(() => new Map(lookups.people.map((p) => [p.id, p])), [lookups.people])
   const labelById = useMemo(() => new Map(lookups.labels.map((l) => [l.id, l])), [lookups.labels])
+  const taskById = useMemo(() => new Map(tasks.map((x) => [x.id, x])), [tasks])
+  const depIndex = useMemo(() => indexDependencies(deps), [deps])
+
+  /** Titles of the unfinished tasks this one waits for. */
+  function waitingTitles(task: Task): string[] {
+    return (depIndex.waitsFor.get(task.id) ?? [])
+      .map((id) => taskById.get(id))
+      .filter((x): x is Task => !!x && x.status !== 'done')
+      .map((x) => x.title)
+  }
+
+  function setParam(key: string, value: string) {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (value) next.set(key, value)
+        else next.delete(key)
+        return next
+      },
+      { replace: key === 'view' },
+    )
+  }
 
   useEffect(() => {
     if (projectFilter) setQuickProject(projectFilter)
@@ -64,6 +100,8 @@ export function TasksPage() {
     return !projectById.get(task.project_id)?.archived
   })
   const visible = inScope.filter((task) => showDone || task.status !== 'done')
+  const currentProject = projectFilter ? projectById.get(projectFilter) : undefined
+  const shownCount = view === 'board' ? inScope.length : visible.length
 
   async function onQuickAdd(e: FormEvent) {
     e.preventDefault()
@@ -85,17 +123,6 @@ export function TasksPage() {
     titleRef.current?.focus()
   }
 
-  async function changeStatus(task: Task, status: TaskStatus) {
-    setActionError(null)
-    const previous = tasks
-    setTasks((prev) => prev.map((x) => (x.id === task.id ? { ...x, status } : x)))
-    const { error } = await supabase.from('tasks').update({ status }).eq('id', task.id)
-    if (error) {
-      setTasks(previous)
-      setActionError(errorMessage(t, error))
-    }
-  }
-
   const noProjects = !lookups.loading && lookups.projects.length === 0
   const isAdmin = profile?.role === 'admin'
 
@@ -103,20 +130,31 @@ export function TasksPage() {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>{t('tasks.title')}</h1>
-          {!loading && !loadError && <p className="muted">{t('tasks.count', { n: visible.length })}</p>}
+          {currentProject ? (
+            <>
+              <p className="muted small page-kicker">{t('tasks.projectTasks')}</p>
+              <h1 className="project-title">
+                <ProjectName name={currentProject.name} color={currentProject.color} />
+              </h1>
+            </>
+          ) : (
+            <h1>{t('tasks.title')}</h1>
+          )}
+          {!loading && !loadError && <p className="muted">{t('tasks.count', { n: shownCount })}</p>}
         </div>
         <div className="filters">
+          <fieldset className="segmented segmented-sm view-switch">
+            <legend className="sr-only">{t('view.label')}</legend>
+            {VIEWS.map((v) => (
+              <label key={v} className={view === v ? 'is-on' : ''}>
+                <input type="radio" name="task-view" checked={view === v} onChange={() => setParam('view', v === 'board' ? 'board' : '')} />
+                {t(`view.${v}`)}
+              </label>
+            ))}
+          </fieldset>
           <div className="field field-inline">
             <label htmlFor="filter-project">{t('tasks.filterProject')}</label>
-            <select
-              id="filter-project"
-              value={projectFilter}
-              onChange={(e) => {
-                const v = e.target.value
-                setParams(v ? { project: v } : {})
-              }}
-            >
+            <select id="filter-project" value={projectFilter} onChange={(e) => setParam('project', e.target.value)}>
               <option value="">{t('tasks.allProjects')}</option>
               {lookups.projects.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -126,10 +164,12 @@ export function TasksPage() {
               ))}
             </select>
           </div>
-          <label className="check">
-            <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
-            {t('tasks.showDone')}
-          </label>
+          {view === 'table' && (
+            <label className="check">
+              <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
+              {t('tasks.showDone')}
+            </label>
+          )}
         </div>
       </header>
 
@@ -184,9 +224,9 @@ export function TasksPage() {
         </form>
       )}
 
-      {actionError && (
+      {mover.error && (
         <p className="form-error" role="alert">
-          {actionError}
+          {mover.error}
         </p>
       )}
 
@@ -201,8 +241,22 @@ export function TasksPage() {
             lookups.reload()
           }}
         />
-      ) : noProjects ? null : visible.length === 0 ? (
-        <EmptyState>{inScope.length > 0 ? t('tasks.emptyFiltered') : t('tasks.empty')}</EmptyState>
+      ) : noProjects ? null : inScope.length === 0 ? (
+        <EmptyState>{t('tasks.empty')}</EmptyState>
+      ) : view === 'board' ? (
+        <TaskBoard
+          tasks={inScope}
+          today={today}
+          me={profile}
+          showProject={!projectFilter}
+          projectById={projectById}
+          personById={personById}
+          waitingTitles={waitingTitles}
+          mover={mover}
+          onOpen={setEditing}
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState>{t('tasks.emptyFiltered')}</EmptyState>
       ) : (
         <div className="table-wrap">
           <table className="data-table task-table">
@@ -221,7 +275,7 @@ export function TasksPage() {
                 const project = projectById.get(task.project_id)
                 const assignee = task.assignee_id ? personById.get(task.assignee_id) : null
                 const late = task.status !== 'done' ? daysBetween(task.deadline, today) : 0
-                const editable = canEditTask(profile, task)
+                const waiting = task.status === 'blocked' ? waitingTitles(task) : []
                 return (
                   <tr key={task.id} className={late > 0 ? 'is-overdue' : ''}>
                     <td data-label={t('tasks.col.task')} className="cell-title">
@@ -236,6 +290,15 @@ export function TasksPage() {
                           })}
                         </span>
                       )}
+                      {task.status === 'blocked' && <span className="small row-note">{t('tasks.waitingFor', { titles: waiting.join(', ') || '?' })}</span>}
+                      {task.review_note && task.status === 'in_progress' && (
+                        <button type="button" className="chip chip-note" onClick={() => setEditing(task)}>
+                          <span aria-hidden="true" className="chip-glyph">
+                            !
+                          </span>
+                          {t('tasks.reviewNoteFlag')}
+                        </button>
+                      )}
                     </td>
                     <td data-label={t('tasks.col.deadline')} className="cell-deadline">
                       <span>{formatDate(task.deadline, locale)}</span>
@@ -243,22 +306,12 @@ export function TasksPage() {
                       {late === 0 && task.status !== 'done' && <span className="chip chip-today">{t('tasks.dueToday')}</span>}
                     </td>
                     <td data-label={t('tasks.col.status')}>
-                      {editable && task.status !== 'blocked' ? (
-                        <select
-                          className={`chip-select chip-status-${task.status}`}
-                          value={task.status}
-                          aria-label={t('tasks.changeStatus', { title: task.title })}
-                          onChange={(e) => changeStatus(task, e.target.value as TaskStatus)}
-                        >
-                          {EDITABLE_STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {t(`status.${s}`)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <StatusChip status={task.status} />
-                      )}
+                      <span className="status-cell">
+                        <TaskStatusControl task={task} me={profile} busy={mover.busyId === task.id} onMove={(st: TaskStatus) => mover.move(task, st)} />
+                        {task.status === 'review' && canReview(profile, task) && (
+                          <ReviewButtons task={task} busy={mover.busyId === task.id} onApprove={() => mover.approve(task)} onReject={() => mover.startReject(task)} />
+                        )}
+                      </span>
                     </td>
                     <td data-label={t('tasks.col.priority')}>
                       <PriorityChip priority={task.priority} />
@@ -280,16 +333,18 @@ export function TasksPage() {
           task={editing}
           lookups={lookups}
           onClose={() => setEditing(null)}
-          onSaved={(saved) => {
-            setTasks((prev) => prev.map((x) => (x.id === saved.id ? saved : x)).sort((a, b) => a.deadline.localeCompare(b.deadline)))
+          onChanged={load}
+          onSaved={() => {
             setEditing(null)
+            load()
           }}
-          onDeleted={(id) => {
-            setTasks((prev) => prev.filter((x) => x.id !== id))
+          onDeleted={() => {
             setEditing(null)
+            load()
           }}
         />
       )}
+      {mover.dialog}
     </div>
   )
 }

@@ -30,6 +30,10 @@ function task(p: Partial<Task>): Task {
     created_by: 'me',
     created_at: `2026-11-01T00:00:0${n % 10}Z`,
     updated_at: '2026-11-01T00:00:00Z',
+    blocked_from: null,
+    review_note: null,
+    review_note_by: null,
+    review_note_at: null,
     task_labels: [],
     ...p,
   }

@@ -179,6 +179,8 @@ export function DashboardPage() {
     setBusyId(null)
     if (error) return setActionError(errorMessage(t, error))
     setTasks((prev) => (status === 'done' ? prev.filter((x) => x.id !== task.id) : prev.map((x) => (x.id === task.id ? { ...x, status } : x))))
+    // Finishing a task can unblock the tasks waiting for it.
+    if (status === 'done') load()
   }
 
   const rowProps = (task: Task) => ({
@@ -502,6 +504,7 @@ export function DashboardPage() {
           task={editing}
           lookups={lookups}
           onClose={() => setEditing(null)}
+          onChanged={load}
           onSaved={(saved) => {
             setTasks((prev) => (saved.status === 'done' ? prev.filter((x) => x.id !== saved.id) : prev.map((x) => (x.id === saved.id ? saved : x))))
             setEditing(null)

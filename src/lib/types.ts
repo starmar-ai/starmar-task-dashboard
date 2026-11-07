@@ -54,7 +54,18 @@ export interface Task {
   created_by: string | null
   created_at: string
   updated_at: string
+  /** While Blocked: the status the task returns to once everything it waits for is Done. */
+  blocked_from: TaskStatus | null
+  review_note: string | null
+  review_note_by: string | null
+  review_note_at: string | null
   task_labels: { label_id: string }[]
+}
+
+/** task_id waits for depends_on_id: it stays Blocked until depends_on_id is Done. */
+export interface TaskDependency {
+  task_id: string
+  depends_on_id: string
 }
 
 export const TASK_STATUSES: TaskStatus[] = ['todo', 'in_progress', 'review', 'done', 'blocked']
