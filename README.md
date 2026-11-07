@@ -2,7 +2,17 @@
 
 Task manager internal Starmar AI. Stack: React (Vite + TypeScript) di depan, Supabase (Postgres + login) di belakang, hosting di Vercel. Semua pakai paket gratis.
 
-Status sekarang: **Tahap 2 (Dashboard)**. Tahap 1 berisi login undangan, role Admin/Member, tabel Proyek dan Tugas, tambah/ubah/hapus tugas, label, tema terang/gelap, bahasa Indonesia/Inggris, dan zona waktu (default WIB). Tahap 2 menambah Dashboard sebagai halaman pertama setelah login: jumlah tugas yang harus selesai (telat dipisah), filter proyek dan periode (hari ini, 7 hari, 1 bulan, pilih tanggal), Fokus hari ini, Perlu perhatian, grafik per proyek yang bisa diklik, dan Rincian. Tahap 2 tidak butuh perubahan database.
+Status sekarang: **Tahap 3 (Tugas per proyek)**. Tahap 1 berisi login undangan, role Admin/Member, tabel Proyek dan Tugas, tambah/ubah/hapus tugas, label, tema terang/gelap, bahasa Indonesia/Inggris, dan zona waktu (default WIB). Tahap 2 menambah Dashboard sebagai halaman pertama setelah login: jumlah tugas yang harus selesai (telat dipisah), filter proyek dan periode (hari ini, 7 hari, 1 bulan, pilih tanggal), Fokus hari ini, Perlu perhatian, grafik per proyek yang bisa diklik, dan Rincian. Tahap 2 tidak butuh perubahan database.
+
+Tahap 3 (Tugas per proyek): halaman Tugas bisa dilihat sebagai **Tabel** atau **Kanban** (kolom To Do, In Progress, Review, Done). Kartu bisa digeser antar kolom, atau statusnya diganti lewat pilihan di kartu (cara ini juga jalan di HP dan keyboard). Klik nama proyek di halaman Proyek untuk membuka tugas proyek itu. Tugas bisa **menunggu tugas lain** (A harus selesai sebelum B): selama yang ditunggu belum Done, tugasnya otomatis **Blocked**, dan otomatis lepas begitu semuanya Done. Tanggal tidak digeser otomatis. Tugas yang punya **reviewer** hanya bisa jadi Done lewat reviewer (atau admin): reviewer klik **Setujui**, atau **Tolak** dengan catatan, lalu tugas balik ke In Progress dan catatannya tampil di tugas.
+
+## Update database: Tahap 3 (menunggu tugas lain + review)
+
+Jalankan sekali saja, setelah update komentar/link/file di bawah sudah pernah dijalankan:
+
+1. Buka Supabase > project kamu > **SQL Editor** > **New query**.
+2. Copy semua isi file `supabase/migrations/20261107060000_stage3_dependencies_review.sql`, paste, lalu klik **Run**. Harus muncul "Success. No rows returned".
+3. Cek di **Table Editor**: harus ada tabel baru `task_dependencies`.
 
 ## Update database: komentar, link, dan file di tugas
 
@@ -21,7 +31,7 @@ Aturannya: semua orang yang bisa lihat tugas boleh komentar, tambah link, dan up
 | `src/pages` | Halaman: Dashboard, Tugas, Proyek, Pengaturan, Login, Buat password |
 | `src/components` | Sidebar, modal, chip status/prioritas, tampilan kosong/loading/error |
 | `src/lib` | Koneksi Supabase, teks UI (ID/EN), tipe data, tanggal, hitungan Dashboard |
-| `tests` | Tes hitungan Dashboard (`npm test`) |
+| `tests` | Tes hitungan Dashboard dan aturan status/menunggu tugas (`npm test`) |
 | `supabase/migrations` | Skema database + aturan akses (row level security) |
 | `DESIGN.md` | Arah desain (palet, gaya, dial) |
 

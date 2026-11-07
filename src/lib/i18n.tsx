@@ -143,7 +143,49 @@ const id = {
   'taskForm.readOnly': 'Hanya assignee, pembuat tugas, atau admin yang bisa mengubah tugas ini.',
   'taskForm.createdBy': 'Dibuat oleh {name}, {date}',
   'taskForm.deleteConfirm': 'Hapus tugas "{title}"? Ini tidak bisa dibatalkan.',
-  'taskForm.blockedNote': 'Blocked nanti diatur otomatis dari dependency (Tahap 3).',
+  'taskForm.blockedNow': 'Blocked otomatis karena masih menunggu tugas lain. Setelah semuanya Done, statusnya balik ke {status}.',
+
+  'view.label': 'Tampilan',
+  'view.table': 'Tabel',
+  'view.board': 'Kanban',
+  'tasks.projectTasks': 'Tugas proyek',
+  'tasks.waitingFor': 'Menunggu: {titles}',
+  'tasks.reviewNoteFlag': 'Ada catatan reviewer',
+  'tasks.doneViaReviewer': 'Done (lewat reviewer)',
+  'board.hint': 'Geser kartu ke kolom lain, atau ganti status lewat pilihan di kartu.',
+  'board.empty': 'Belum ada tugas di sini.',
+  'board.blockedCount': '{n} blocked',
+  'board.showAllDone': 'Tampilkan semua ({n})',
+  'board.showLessDone': 'Tampilkan lebih sedikit',
+  'board.column': 'Kolom {status}, {n} tugas',
+  'move.blocked': 'Tugas ini masih Blocked. Selesaikan dulu tugas yang ditunggu, nanti statusnya balik sendiri.',
+  'move.needsReview': 'Tugas ini punya reviewer. Pindahkan ke Review, nanti reviewer yang menandai Done.',
+  'move.noAccess': 'Hanya assignee, pembuat tugas, atau admin yang bisa memindahkan tugas ini.',
+
+  'review.approve': 'Setujui',
+  'review.reject': 'Tolak',
+  'review.approveFor': 'Setujui {title}, jadi Done',
+  'review.rejectFor': 'Tolak {title}, kembali ke In Progress',
+  'review.rejectTitle': 'Tolak dan kembalikan ke In Progress',
+  'review.rejectIntro': '"{title}" balik ke In Progress. Catatanmu tampil di tugas dan masuk ke komentar.',
+  'review.noteLabel': 'Apa yang perlu diperbaiki?',
+  'review.noteRequired': 'Tulis catatannya dulu, supaya assignee tahu apa yang harus diperbaiki.',
+  'review.commentPrefix': 'Ditolak di review: {note}',
+  'review.noteBox': 'Catatan reviewer dari {name}, {date}',
+  'review.waiting': 'Menunggu review dari {name}.',
+  'review.yourTurn': 'Tugas ini menunggu review kamu.',
+
+  'deps.title': 'Menunggu tugas lain',
+  'deps.hint': 'Tugas ini otomatis Blocked sampai semua tugas di daftar ini Done. Tanggal tidak digeser otomatis.',
+  'deps.empty': 'Tidak menunggu tugas apa pun.',
+  'deps.pick': 'Tugas yang harus selesai dulu',
+  'deps.pickNone': 'Pilih tugas...',
+  'deps.add': 'Tambah',
+  'deps.remove': 'Hapus {title} dari daftar tunggu',
+  'deps.waitedBy': 'Ditunggu oleh',
+  'deps.noCandidates': 'Belum ada tugas lain di proyek ini yang bisa dipilih.',
+  'deps.loadError': 'Daftar tunggu gagal dimuat.',
+  'deps.lateWarn': 'deadline {date}, setelah deadline tugas ini',
 
   'extras.savedNow': 'Tersimpan langsung, tidak perlu klik Simpan.',
   'files.title': 'Link dan file',
@@ -256,6 +298,11 @@ const id = {
 
   'error.generic': 'Ada yang gagal: {message}',
   'error.permission': 'Kamu tidak punya izin untuk perubahan ini.',
+  'error.taskBlocked': 'Tugas ini masih menunggu tugas lain yang belum Done, jadi belum bisa ditandai Done.',
+  'error.needsReview': 'Tugas ini punya reviewer. Pindahkan ke Review, nanti reviewer yang menandai Done.',
+  'error.dependencyCycle': 'Tidak bisa: tugas itu sudah (langsung atau lewat tugas lain) menunggu tugas ini.',
+  'error.reviewNoteRequired': 'Tulis catatannya dulu, supaya assignee tahu apa yang harus diperbaiki.',
+  'error.notInReview': 'Tugas ini sudah tidak di Review. Muat ulang halaman untuk melihat status terbarunya.',
   'notFound.title': 'Halaman tidak ditemukan',
   'notFound.back': 'Kembali ke Dashboard',
 }
@@ -404,7 +451,49 @@ const en: Record<Key, string> = {
   'taskForm.readOnly': 'Only the assignee, the creator, or an admin can edit this task.',
   'taskForm.createdBy': 'Created by {name}, {date}',
   'taskForm.deleteConfirm': 'Delete task "{title}"? This cannot be undone.',
-  'taskForm.blockedNote': 'Blocked will be set automatically from dependencies (Stage 3).',
+  'taskForm.blockedNow': 'Blocked automatically because it is waiting for other tasks. Once they are all Done, it goes back to {status}.',
+
+  'view.label': 'View',
+  'view.table': 'Table',
+  'view.board': 'Board',
+  'tasks.projectTasks': 'Project tasks',
+  'tasks.waitingFor': 'Waiting for: {titles}',
+  'tasks.reviewNoteFlag': 'Reviewer left a note',
+  'tasks.doneViaReviewer': 'Done (through the reviewer)',
+  'board.hint': 'Drag a card to another column, or change its status from the menu on the card.',
+  'board.empty': 'No tasks here yet.',
+  'board.blockedCount': '{n} blocked',
+  'board.showAllDone': 'Show all ({n})',
+  'board.showLessDone': 'Show fewer',
+  'board.column': '{status} column, {n} tasks',
+  'move.blocked': 'This task is still Blocked. Finish the tasks it waits for first; its status comes back on its own.',
+  'move.needsReview': 'This task has a reviewer. Move it to Review and the reviewer marks it Done.',
+  'move.noAccess': 'Only the assignee, the creator, or an admin can move this task.',
+
+  'review.approve': 'Approve',
+  'review.reject': 'Reject',
+  'review.approveFor': 'Approve {title} as Done',
+  'review.rejectFor': 'Reject {title}, back to In Progress',
+  'review.rejectTitle': 'Reject and send back to In Progress',
+  'review.rejectIntro': '"{title}" goes back to In Progress. Your note shows on the task and is added to the comments.',
+  'review.noteLabel': 'What needs fixing?',
+  'review.noteRequired': 'Write the note first, so the assignee knows what to fix.',
+  'review.commentPrefix': 'Rejected in review: {note}',
+  'review.noteBox': 'Reviewer note from {name}, {date}',
+  'review.waiting': 'Waiting for {name} to review.',
+  'review.yourTurn': 'This task is waiting for your review.',
+
+  'deps.title': 'Waits for',
+  'deps.hint': 'This task is Blocked automatically until every task in this list is Done. Dates are never moved automatically.',
+  'deps.empty': 'Not waiting for any task.',
+  'deps.pick': 'Task that must finish first',
+  'deps.pickNone': 'Pick a task...',
+  'deps.add': 'Add',
+  'deps.remove': 'Remove {title} from the waiting list',
+  'deps.waitedBy': 'Waited on by',
+  'deps.noCandidates': 'There are no other tasks in this project to pick yet.',
+  'deps.loadError': 'The waiting list failed to load.',
+  'deps.lateWarn': 'deadline {date}, after this task\'s deadline',
 
   'extras.savedNow': 'Saved right away, no need to press Save.',
   'files.title': 'Links and files',
@@ -517,6 +606,11 @@ const en: Record<Key, string> = {
 
   'error.generic': 'Something failed: {message}',
   'error.permission': 'You do not have permission for this change.',
+  'error.taskBlocked': 'This task still waits for tasks that are not Done, so it cannot be marked Done yet.',
+  'error.needsReview': 'This task has a reviewer. Move it to Review and the reviewer marks it Done.',
+  'error.dependencyCycle': 'Not possible: that task already waits for this one (directly or through other tasks).',
+  'error.reviewNoteRequired': 'Write the note first, so the assignee knows what to fix.',
+  'error.notInReview': 'This task is no longer in Review. Reload the page to see its latest status.',
   'notFound.title': 'Page not found',
   'notFound.back': 'Back to Dashboard',
 }
@@ -547,7 +641,13 @@ export function useI18n() {
 /** Postgres/PostgREST errors to a sentence the user can act on. */
 export function errorMessage(t: TFn, err: { message?: string; code?: string } | null | undefined): string {
   if (!err) return ''
-  if (err.code === '42501' || /row-level security|only an admin/i.test(err.message ?? '')) return t('error.permission')
+  if (err.code === '42501' || /row-level security|only an admin|only the reviewer/i.test(err.message ?? '')) return t('error.permission')
   if (/at least one admin/i.test(err.message ?? '')) return t('settings.lastAdmin')
+  const msg = err.message ?? ''
+  if (msg.includes('task_blocked')) return t('error.taskBlocked')
+  if (msg.includes('needs_review')) return t('error.needsReview')
+  if (msg.includes('dependency_cycle')) return t('error.dependencyCycle')
+  if (msg.includes('review_note_required')) return t('error.reviewNoteRequired')
+  if (msg.includes('task_not_in_review')) return t('error.notInReview')
   return t('error.generic', { message: err.message ?? 'unknown' })
 }

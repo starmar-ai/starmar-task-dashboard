@@ -4,10 +4,14 @@ import { removeFilesOfTasks } from '../lib/taskFiles'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { canEditTask } from '../lib/permissions'
-import { formatDate } from '../lib/dates'
+import { canReview, needsReviewer } from '../lib/taskFlow'
+import { formatDate, formatDateTime } from '../lib/dates'
 import type { useLookups } from '../lib/useTeam'
 import { PRIORITIES, SWATCHES, type Label, type Priority, type Task, type TaskStatus } from '../lib/types'
 import { ConfirmDialog, Modal } from '../components/Modal'
+import { StatusChip } from '../components/Chips'
+import { TaskDependencies } from '../components/TaskDependencies'
+import { ReviewButtons, useTaskMover } from '../components/TaskMover'
 import { TaskComments } from '../components/TaskComments'
 import { TaskFiles } from '../components/TaskFiles'
 
@@ -15,11 +19,13 @@ interface Props {
   task: Task
   lookups: ReturnType<typeof useLookups>
   onClose: () => void
+  /** Something outside the form fields changed (waiting list, review); the list behind should reload. */
+  onChanged?: () => void
   onSaved: (task: Task) => void
   onDeleted: (id: string) => void
 }
 
-export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) {
+export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted }: Props) {
   const { t, locale } = useI18n()
   const { profile } = useAuth()
   const editable = canEditTask(profile, task)
@@ -29,6 +35,8 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
   const [deadline, setDeadline] = useState(task.deadline)
   const [startDate, setStartDate] = useState(task.start_date ?? '')
   const [status, setStatus] = useState<TaskStatus>(task.status)
+  // Status as the database last reported it; the waiting list can change it while the form is open.
+  const [live, setLive] = useState<Pick<Task, 'status' | 'blocked_from'>>({ status: task.status, blocked_from: task.blocked_from })
   const [priority, setPriority] = useState<Priority>(task.priority)
   const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
   const [reviewerId, setReviewerId] = useState(task.reviewer_id ?? '')
@@ -40,6 +48,14 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
+  const mover = useTaskMover(() => {
+    onChanged?.()
+    onClose()
+  })
+  const reviewerPerson = lookups.people.find((p) => p.id === task.reviewer_id)
+  const notePerson = lookups.people.find((p) => p.id === task.review_note_by)
+  const showReview = live.status === 'review' && !!task.reviewer_id
+  const doneLocked = needsReviewer(profile, { reviewer_id: reviewerId || null }) && live.status !== 'done'
   const creator = lookups.people.find((p) => p.id === task.created_by)
   const projects = lookups.projects.filter((p) => !p.archived || p.id === task.project_id)
 
@@ -73,7 +89,7 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
         project_id: projectId,
         deadline,
         start_date: startDate || null,
-        status,
+        ...(status !== live.status ? { status } : {}),
         priority,
         assignee_id: assigneeId || null,
         reviewer_id: reviewerId || null,
@@ -150,6 +166,36 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
         }
       >
         {!editable && <p className="form-info">{t('taskForm.readOnly')}</p>}
+        {task.review_note && live.status !== 'done' && (
+          <div className="review-note" role="note">
+            <p className="review-note-head">
+              <span className="chip chip-overdue">
+                <span aria-hidden="true" className="chip-glyph">
+                  !
+                </span>
+                {t('tasks.reviewNoteFlag')}
+              </span>
+              {t('review.noteBox', {
+                name: notePerson?.full_name || notePerson?.email || '?',
+                date: task.review_note_at ? formatDateTime(task.review_note_at, locale, profile?.timezone ?? 'Asia/Jakarta') : '',
+              })}
+            </p>
+            <p className="review-note-body">{task.review_note}</p>
+          </div>
+        )}
+        {showReview && (
+          <div className="review-bar">
+            <p>{canReview(profile, task) ? t('review.yourTurn') : t('review.waiting', { name: reviewerPerson?.full_name || reviewerPerson?.email || '?' })}</p>
+            {canReview(profile, task) && (
+              <ReviewButtons task={task} busy={mover.busyId === task.id} onApprove={() => mover.approve(task)} onReject={() => mover.startReject(task)} />
+            )}
+          </div>
+        )}
+        {mover.error && (
+          <p className="form-error" role="alert">
+            {mover.error}
+          </p>
+        )}
         <form id="task-form" onSubmit={onSubmit}>
           <fieldset disabled={!editable} className="form-grid">
             <div className="field span-2">
@@ -177,15 +223,26 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
               <input id="tf-deadline" type="date" required value={deadline} onChange={(e) => setDeadline(e.target.value)} />
             </div>
             <div className="field">
-              <label htmlFor="tf-status">{t('taskForm.status')}</label>
-              <select id="tf-status" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
-                {(['todo', 'in_progress', 'review', 'done'] as TaskStatus[]).map((s) => (
-                  <option key={s} value={s}>
-                    {t(`status.${s}`)}
-                  </option>
-                ))}
-                {status === 'blocked' && <option value="blocked">{t('status.blocked')}</option>}
-              </select>
+              {live.status === 'blocked' ? (
+                <>
+                  <span className="field-label">{t('taskForm.status')}</span>
+                  <span>
+                    <StatusChip status="blocked" />
+                  </span>
+                  <span className="muted small">{t('taskForm.blockedNow', { status: t(`status.${live.blocked_from && live.blocked_from !== 'blocked' ? live.blocked_from : 'todo'}`) })}</span>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="tf-status">{t('taskForm.status')}</label>
+                  <select id="tf-status" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
+                    {(['todo', 'in_progress', 'review', 'done'] as TaskStatus[]).map((s) => (
+                      <option key={s} value={s} disabled={s === 'done' && doneLocked}>
+                        {s === 'done' && doneLocked ? t('tasks.doneViaReviewer') : t(`status.${s}`)}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
             </div>
             <div className="field">
               <label htmlFor="tf-priority">{t('taskForm.priority')}</label>
@@ -287,6 +344,15 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
             date: formatDate(task.created_at.slice(0, 10), locale),
           })}
         </p>
+        <TaskDependencies
+          task={task}
+          canManage={editable}
+          onChanged={(fresh) => {
+            setLive(fresh)
+            setStatus(fresh.status)
+            onChanged?.()
+          }}
+        />
         <TaskFiles taskId={task.id} canManage={editable} people={people} />
         <TaskComments taskId={task.id} people={people} />
       </Modal>
@@ -299,6 +365,7 @@ export function TaskForm({ task, lookups, onClose, onSaved, onDeleted }: Props) 
           onCancel={() => setConfirmDelete(false)}
         />
       )}
+      {mover.dialog}
     </>
   )
 }
