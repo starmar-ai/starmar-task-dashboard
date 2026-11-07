@@ -2886,25 +2886,6 @@ a.resource-name:hover {
   box-shadow: 0 0 0 2px var(--coral);
 }
 
-.cal-more {
-  align-self: flex-start;
-  padding: 0.1rem 0.3rem;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-
-.cal-more:hover {
-  color: var(--text);
-  background: var(--surface-2);
-}
 
 .cal-dots {
   display: none;
@@ -3239,6 +3220,8 @@ a.resource-name:hover {
   .quick-pop-actions .btn {
     flex: 1 1 auto;
   }
+}
+
 /* "+n lagi" is a real button: it opens the full list of that day below the grid. */
 button.cal-more {
   align-self: flex-start;
