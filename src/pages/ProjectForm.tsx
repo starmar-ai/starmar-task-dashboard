@@ -42,6 +42,9 @@ export function ProjectForm({ project, people, onClose, onSaved }: Props) {
       })
   }, [project, t])
 
+  const activePeople = people.filter((p) => p.active !== false || p.id === pmId)
+  const memberChoices = people.filter((p) => (p.active !== false && p.role !== 'admin') || initialMembers.includes(p.id))
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
@@ -140,7 +143,7 @@ export function ProjectForm({ project, people, onClose, onSaved }: Props) {
             <label htmlFor="pf-pm">{t('projectForm.pm')}</label>
             <select id="pf-pm" value={pmId} onChange={(e) => setPmId(e.target.value)}>
               <option value="">{t('common.none')}</option>
-              {people.map((p) => (
+              {activePeople.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.full_name || p.email}
                 </option>
@@ -165,8 +168,10 @@ export function ProjectForm({ project, people, onClose, onSaved }: Props) {
           </div>
           <fieldset className="field span-2">
             <legend className="field-label">{t('projectForm.members')}</legend>
+            <p className="muted small">{t('projectForm.membersHint')}</p>
+            {memberChoices.length === 0 && <p className="muted small">{t('projectForm.membersEmpty')}</p>}
             <div className="label-picker">
-              {people.map((p) => {
+              {memberChoices.map((p) => {
                 const on = members.includes(p.id)
                 return (
                   <label key={p.id} className={`label-option ${on ? 'is-on' : ''}`}>

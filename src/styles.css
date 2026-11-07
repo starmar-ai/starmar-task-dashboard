@@ -3013,3 +3013,95 @@ a.resource-name:hover {
     transition: none;
   }
 }
+
+/* Team page ------------------------------------------------------------- */
+
+.chip-invite-active {
+  background: var(--teal-light);
+  color: var(--on-color);
+}
+
+.chip-invite-pending {
+  background: var(--yellow);
+  color: var(--on-color);
+}
+
+.team-invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.invite-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+}
+
+.invite-result p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.team-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.team-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 1rem 0;
+  border-top: 2px solid var(--surface-2);
+}
+
+.team-row:first-child {
+  border-top: 0;
+  padding-top: 0.25rem;
+}
+
+.team-who {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.team-who .user-text {
+  flex: 1 1 160px;
+}
+
+.team-projects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  font-size: 0.92rem;
+}
+
+.team-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-actions select {
+  width: auto;
+}
+
+.access-list {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}

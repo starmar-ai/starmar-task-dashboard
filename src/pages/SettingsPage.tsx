@@ -3,10 +3,10 @@ import { supabase } from '../lib/supabase'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { useLookups } from '../lib/useTeam'
-import { SWATCHES, TIMEZONES, type Label, type Locale, type Role, type Theme } from '../lib/types'
+import { SWATCHES, TIMEZONES, type Label, type Locale, type Theme } from '../lib/types'
 import { ConfirmDialog } from '../components/Modal'
 import { ErrorState, LoadingState } from '../components/States'
-import { Avatar, LabelTag } from '../components/Chips'
+import { LabelTag } from '../components/Chips'
 
 export function SettingsPage() {
   const { t } = useI18n()
@@ -62,15 +62,6 @@ export function SettingsPage() {
     if (error) setError(errorMessage(t, error))
     else lookups.setLabels((prev) => prev.filter((l) => l.id !== deleting.id))
     setDeleting(null)
-  }
-
-  async function changeRole(userId: string, role: Role) {
-    setError(null)
-    setNotice(null)
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId)
-    if (error) setError(errorMessage(t, error))
-    else setNotice(t('settings.saved'))
-    lookups.reload()
   }
 
   return (
@@ -193,31 +184,6 @@ export function SettingsPage() {
           </button>
         </form>
       </section>
-
-      {isAdmin && (
-        <section className="card" aria-labelledby="s-users">
-          <h2 id="s-users">{t('settings.users')}</h2>
-          <p className="muted small">{t('settings.usersHint')}</p>
-          <ul className="user-list">
-            {lookups.people.map((p) => (
-              <li key={p.id}>
-                <Avatar name={p.full_name || p.email} />
-                <span className="user-text">
-                  <span>{p.full_name || p.email}</span>
-                  <span className="muted small">{p.email}</span>
-                </span>
-                <label htmlFor={`role-${p.id}`} className="sr-only">
-                  {t('settings.role')}
-                </label>
-                <select id={`role-${p.id}`} value={p.role} onChange={(e) => changeRole(p.id, e.target.value as Role)}>
-                  <option value="admin">{t('role.admin')}</option>
-                  <option value="member">{t('role.member')}</option>
-                </select>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {deleting && (
         <ConfirmDialog

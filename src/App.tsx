@@ -12,6 +12,7 @@ import { TasksPage } from './pages/TasksPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { CalendarPage } from './pages/CalendarPage'
+import { TeamPage } from './pages/TeamPage'
 
 function useThemeSync(theme: 'light' | 'dark' | undefined) {
   useEffect(() => {
@@ -59,6 +60,21 @@ function Gate() {
     )
   }
 
+  if (profile.active === false) {
+    return (
+      <main className="auth-page">
+        <div className="auth-card">
+          <span className="wordmark wordmark-lg">{t('app.name')}</span>
+          <h1>{t('access.revokedTitle')}</h1>
+          <p>{t('access.revokedBody')}</p>
+          <button type="button" className="btn btn-secondary" onClick={signOut}>
+            {t('nav.signOut')}
+          </button>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <Routes>
       <Route element={<AppShell />}>
@@ -67,6 +83,7 @@ function Gate() {
         <Route path="tasks" element={<TasksPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="calendar" element={<CalendarPage />} />
+        <Route path="team" element={<TeamPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
