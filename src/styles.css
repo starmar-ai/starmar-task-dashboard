@@ -3105,3 +3105,35 @@ a.resource-name:hover {
   margin: 0;
   padding: 0;
 }
+
+/* "+n lagi" is a real button: it opens the full list of that day below the grid. */
+button.cal-more {
+  align-self: flex-start;
+  margin: 0;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+button.cal-more:hover {
+  border-color: var(--line);
+}
+
+button.cal-more:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.cal-agenda {
+  scroll-margin-top: 1rem;
+}
+
+.cal-agenda:focus {
+  outline: none;
+}

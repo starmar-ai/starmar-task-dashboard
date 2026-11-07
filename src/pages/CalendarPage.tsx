@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
@@ -32,6 +32,17 @@ export function CalendarPage() {
   const [editing, setEditing] = useState<Task | null>(null)
   const [selected, setSelected] = useState<string>(today)
   const [showDone, setShowDone] = useState(true)
+  const agendaRef = useRef<HTMLElement>(null)
+
+  /** Pick a day and bring its full task list into view. */
+  function openDay(d: string) {
+    setSelected(d)
+    requestAnimationFrame(() => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      agendaRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+      agendaRef.current?.focus({ preventScroll: true })
+    })
+  }
 
   const load = useCallback(async () => {
     setLoadError(null)
@@ -213,14 +224,14 @@ export function CalendarPage() {
                       role="gridcell"
                       aria-selected={d === selected}
                       className={`cal-day ${outside ? 'is-outside' : ''} ${isToday ? 'is-today' : ''} ${d === selected ? 'is-selected' : ''}`}
-                      onClick={() => setSelected(d)}
+                      onClick={() => (window.matchMedia('(max-width: 760px)').matches ? openDay(d) : setSelected(d))}
                     >
                       <button
                         type="button"
                         className="cal-date"
                         onClick={(e) => {
                           e.stopPropagation()
-                          setSelected(d)
+                          openDay(d)
                         }}
                         aria-label={`${formatDate(d, locale)}${isToday ? `, ${t('gantt.today')}` : ''}, ${t('cal.dayCount', { n: list.length })}`}
                       >
@@ -229,7 +240,19 @@ export function CalendarPage() {
                       {isToday && <span className="cal-today-tag">{t('gantt.today')}</span>}
                       <div className="cal-day-tasks">
                         {list.slice(0, MAX_IN_CELL).map((task) => chipFor(task, true))}
-                        {list.length > MAX_IN_CELL && <span className="cal-more">{t('cal.more', { n: list.length - MAX_IN_CELL })}</span>}
+                        {list.length > MAX_IN_CELL && (
+                          <button
+                            type="button"
+                            className="cal-more"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openDay(d)
+                            }}
+                            aria-label={`${t('cal.more', { n: list.length - MAX_IN_CELL })}, ${formatDate(d, locale)}`}
+                          >
+                            {t('cal.more', { n: list.length - MAX_IN_CELL })}
+                          </button>
+                        )}
                       </div>
                       {list.length > 0 && (
                         <span className={`cal-dots ${late ? 'is-late' : ''}`} aria-hidden="true">
@@ -243,7 +266,7 @@ export function CalendarPage() {
             ))}
           </div>
 
-          <section className="card cal-agenda" aria-live="polite">
+          <section ref={agendaRef} tabIndex={-1} className="card cal-agenda" aria-live="polite">
             <h2 className="cal-agenda-title">
               {formatDate(selected, locale)}
               {selected === today && <span className="chip chip-today">{t('gantt.today')}</span>}
