@@ -4,10 +4,16 @@ import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../lib/i18n'
 import { Avatar } from './Chips'
 
-function NavIcon({ name }: { name: 'tasks' | 'projects' | 'settings' }) {
+function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'settings' }) {
   const common = { stroke: 'currentColor', strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      {name === 'dashboard' && (
+        <>
+          <path d="M4 19.5h16" {...common} />
+          <path d="M7 16v-4M12 16V7M17 16v-6" {...common} />
+        </>
+      )}
       {name === 'tasks' && (
         <>
           <rect x="3.5" y="4" width="17" height="16" rx="3" {...common} />
@@ -70,6 +76,12 @@ export function AppShell() {
         </div>
         <nav aria-label={t('nav.main')}>
           <ul className="nav-list">
+            <li>
+              <NavLink to="/dashboard" className="nav-link">
+                <NavIcon name="dashboard" />
+                {t('nav.dashboard')}
+              </NavLink>
+            </li>
             <li>
               <NavLink to="/tasks" className="nav-link">
                 <NavIcon name="tasks" />

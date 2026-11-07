@@ -1128,6 +1128,396 @@ input[type='radio'] {
   font-size: 1.5rem;
 }
 
+
+/* Dashboard -------------------------------------------------------------
+   One focal point: the "to finish" number in the hero card, which carries the large hard shadow.
+   Yellow is spent on the active period pill and the focus ranks; coral only on what is late. */
+
+.dash-filters {
+  align-items: flex-end;
+}
+
+.dash-custom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+}
+
+.dash-custom .field {
+  width: 180px;
+}
+
+.dash-custom .form-error {
+  flex: 1 1 100%;
+}
+
+.dash-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 1rem 2rem;
+  padding: 1.5rem 1.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.dash-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.dash-total p:first-child {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.dash-number {
+  font-size: clamp(3.5rem, 2.6rem + 3vw, 5rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-number-label {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.dash-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.dash-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 84px;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--speed) ease,
+    box-shadow var(--speed) ease;
+}
+
+.dash-stat:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
+}
+
+.dash-stat:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--shadow);
+}
+
+.dash-stat:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+.dash-stat-overdue {
+  background: var(--coral);
+  color: var(--on-color);
+}
+
+.dash-stat-overdue.is-zero {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.dash-stat-number {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-stat-text {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.dash-stat-text strong {
+  font-size: 1rem;
+}
+
+.dash-note {
+  grid-column: 1 / -1;
+}
+
+.dash-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.dash-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.9rem;
+  height: 1.6rem;
+  margin-left: 0.25rem;
+  padding: 0 0.45rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  vertical-align: 0.1em;
+}
+
+.dash-empty {
+  padding: 0.9rem 1rem;
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-input);
+  color: var(--muted);
+}
+
+.dash-list,
+.dash-focus-list,
+.dash-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dash-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.7rem 0;
+  border-top: 2px solid var(--surface-2);
+}
+
+.dash-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.dash-row-title {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.dash-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+/* Long project names wrap inside lists; keep the swatch on the first line instead of centred. */
+.dash-row-meta .project-name {
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.dash-row-meta .swatch {
+  flex-shrink: 0;
+  margin-top: 0.3em;
+}
+
+.dash-deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.dash-focus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dash-focus-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+}
+
+.dash-focus-rank {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 2px solid var(--indigo);
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--indigo);
+  font-weight: 800;
+}
+
+.dash-focus-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.dash-more {
+  align-self: flex-start;
+}
+
+.dash-legend {
+  display: flex;
+  gap: 1rem;
+  font-weight: 700;
+}
+
+.dash-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dash-key {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+}
+
+.dash-key-overdue,
+.dash-bar-overdue {
+  background: var(--coral);
+}
+
+.dash-key-due,
+.dash-bar-due {
+  background: var(--periwinkle);
+}
+
+.dash-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dash-bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr) 7.5rem;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.35rem 0.6rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.dash-bar-row:hover {
+  border-color: var(--line);
+}
+
+.dash-bar-row.is-on {
+  border-color: var(--line);
+  background: var(--surface-2);
+}
+
+.dash-bar-row .project-name {
+  min-width: 0;
+  font-weight: 700;
+}
+
+.dash-bar-row .project-name span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-bar-track {
+  display: flex;
+  height: 1.25rem;
+  min-width: 0;
+}
+
+.dash-bar {
+  min-width: 6px;
+  height: 100%;
+  border: 2px solid var(--line);
+}
+
+.dash-bar + .dash-bar {
+  border-left: 0;
+}
+
+.dash-bar:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.dash-bar:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.dash-bar:only-child {
+  border-radius: 6px;
+}
+
+.dash-bar-nums {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-details {
+  scroll-margin-top: 1rem;
+}
+
+.dash-details-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.segmented-sm label {
+  min-height: 40px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.9rem;
+}
+
+.dash-clear {
+  min-height: 40px;
+  padding-inline: 0.85rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.dash-clear:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.dash-open-tasks {
+  align-self: flex-start;
+}
+
 /* Mid widths: keep the sidebar, let the quick-add form wrap. */
 @media (max-width: 1100px) {
   .quick-add {
@@ -1140,6 +1530,11 @@ input[type='radio'] {
 
   .page {
     padding: 1.5rem 1.5rem 2.5rem;
+  }
+
+  .dash-hero,
+  .dash-columns {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1295,6 +1690,57 @@ input[type='radio'] {
     width: 100%;
   }
 
+  .dash-hero {
+    padding: 1.1rem;
+    box-shadow: var(--shadow-md);
+  }
+
+  .dash-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-focus-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .dash-focus-item > .btn,
+  .dash-focus-item > .chip {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .dash-bar-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .dash-bar-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .dash-custom .field {
+    width: auto;
+    flex: 1 1 140px;
+  }
+
+  .dash-filters .segmented {
+    width: 100%;
+  }
+
+  .dash-filters .segmented label {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: 0.6rem;
+  }
+
+  .segmented-sm label {
+    min-height: 44px;
+  }
+
+  .dash-clear {
+    min-height: 44px;
+  }
+
   .filters {
     width: 100%;
   }
@@ -1305,6 +1751,12 @@ input[type='radio'] {
 
   .field-inline {
     flex: 1 1 100%;
+  }
+
+  .field-inline select {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
   }
 
   .form-grid {
@@ -1353,7 +1805,9 @@ input[type='radio'] {
   }
 
   .btn:hover:not(:disabled),
-  .btn:active:not(:disabled) {
+  .btn:active:not(:disabled),
+  .dash-stat:hover:not(:disabled),
+  .dash-stat:active:not(:disabled) {
     transform: none;
   }
 }

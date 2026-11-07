@@ -19,7 +19,7 @@ export function SetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password: pw })
     setBusy(false)
     if (error) return setError(error.message)
-    history.replaceState(null, '', '/tasks')
+    history.replaceState(null, '', '/dashboard')
     setNeedsPassword(false)
   }
 
