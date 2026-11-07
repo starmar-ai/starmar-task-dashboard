@@ -60,7 +60,7 @@ Teks normal butuh 4.5:1, komponen non-teks 3:1.
 ## Tema
 
 - **Terang (default):** latar Cream, kartu putih/cream, outline dan shadow indigo.
-- **Gelap (toggle):** tiga tingkat indigo. Panel utama paling gelap `#1A1944`, kartu dan tabel satu tingkat di atasnya `#252462`, input dan area dalam kartu satu tingkat lagi `#2E2D74`. Sidebar `#2B2A6B`, lebih terang dari panel supaya terbaca sebagai area sendiri. Teks Cream (sekitar 15:1 di panel, 12.9:1 di kartu, 10.6:1 di input). Outline dan shadow pakai lavender muda `#B8B6E0` supaya motif outline tetap kelihatan. Yellow tetap jadi aksen utama; teks di atas Yellow dan Coral tetap indigo.
+- **Gelap (toggle):** tiga tingkat indigo. Panel utama paling gelap `#1A1944`, kartu dan tabel satu tingkat di atasnya `#252462`, input dan area dalam kartu satu tingkat lagi `#2E2D74`. Sidebar `#2B2A6B`, lebih terang dari panel supaya terbaca sebagai area sendiri. Teks Cream (15.4:1 di panel, 12.9:1 di kartu, 11.2:1 di input). Outline dan shadow pakai lavender muda `#B8B6E0` supaya motif outline tetap kelihatan. Yellow tetap jadi aksen utama; teks di atas Yellow dan Coral tetap indigo.
 - Pilihan tema disimpan per user.
 
 ## Tipografi
