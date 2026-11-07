@@ -2,7 +2,7 @@ import { useI18n } from '../lib/i18n'
 import type { Priority, ProjectStatus, TaskStatus } from '../lib/types'
 
 // Each chip pairs a shape glyph with text, so status never relies on color alone.
-const STATUS_GLYPH: Record<TaskStatus, string> = {
+export const STATUS_GLYPH: Record<TaskStatus, string> = {
   todo: '○',
   in_progress: '◐',
   review: '◎',
