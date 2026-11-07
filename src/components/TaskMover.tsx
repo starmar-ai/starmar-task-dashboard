@@ -4,7 +4,7 @@ import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { planMove } from '../lib/taskFlow'
 import type { Task, TaskStatus } from '../lib/types'
-import { Modal } from './Modal'
+import { ConfirmDialog, Modal } from './Modal'
 
 const DENIED = {
   blocked: 'move.blocked',
@@ -23,6 +23,7 @@ export function useTaskMover(onChanged: () => void, onOptimistic?: (taskId: stri
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [rejecting, setRejecting] = useState<Task | null>(null)
+  const [finishing, setFinishing] = useState<Task | null>(null)
 
   async function update(task: Task, status: TaskStatus) {
     setBusyId(task.id)
@@ -50,19 +51,41 @@ export function useTaskMover(onChanged: () => void, onOptimistic?: (taskId: stri
     if (plan.kind === 'denied') return setError(t(DENIED[plan.reason]))
     if (plan.kind === 'reject') return setRejecting(task)
     if (plan.kind === 'approve') return approve(task)
+    if (plan.status === 'done') return setFinishing(task)
     return update(task, plan.status)
   }
 
-  const dialog = rejecting ? (
-    <RejectDialog
-      task={rejecting}
-      onCancel={() => setRejecting(null)}
-      onRejected={() => {
-        setRejecting(null)
-        onChanged()
-      }}
-    />
-  ) : null
+  const dialog = (
+    <>
+      {rejecting && (
+        <RejectDialog
+          task={rejecting}
+          onCancel={() => setRejecting(null)}
+          onRejected={() => {
+            setRejecting(null)
+            onChanged()
+          }}
+        />
+      )}
+      {finishing && (
+        <ConfirmDialog
+          title={t('done.confirmTitle')}
+          message={t('done.confirmBody', { title: finishing.title })}
+          confirmLabel={t('done.confirm')}
+          tone="primary"
+          onConfirm={() => {
+            const task = finishing
+            setFinishing(null)
+            update(task, 'done')
+          }}
+          onCancel={() => {
+            setFinishing(null)
+            onChanged()
+          }}
+        />
+      )}
+    </>
+  )
 
   return { move, approve, startReject: (task: Task) => setRejecting(task), busyId, error, clearError: () => setError(null), dialog }
 }

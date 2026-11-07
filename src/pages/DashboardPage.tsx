@@ -24,6 +24,8 @@ import type { Profile, Project, Task, TaskStatus } from '../lib/types'
 import { PriorityChip, ProjectName, StatusChip } from '../components/Chips'
 import { EmptyState, ErrorState, LoadingState } from '../components/States'
 import { TaskForm } from './TaskForm'
+import { useTasksChanged } from '../lib/taskEvents'
+import { ConfirmDialog } from '../components/Modal'
 
 const ATTENTION_PREVIEW = 6
 const BUCKETS: Bucket[] = ['all', 'overdue', 'due']
@@ -134,6 +136,7 @@ export function DashboardPage() {
   useEffect(() => {
     load()
   }, [load])
+  useTasksChanged(load)
 
   const projectById = useMemo(() => new Map(lookups.projects.map((p) => [p.id, p])), [lookups.projects])
   const personById = useMemo(() => new Map(lookups.people.map((p) => [p.id, p])), [lookups.people])
@@ -171,6 +174,8 @@ export function DashboardPage() {
     setChartProject(projectId)
     requestAnimationFrame(() => detailsRef.current?.scrollIntoView({ block: 'start' }))
   }
+
+  const [confirmDone, setConfirmDone] = useState<Task | null>(null)
 
   async function finish(task: Task, status: TaskStatus) {
     setActionError(null)
@@ -366,7 +371,7 @@ export function DashboardPage() {
                             type="button"
                             className="btn btn-secondary btn-sm"
                             disabled={busyId === task.id}
-                            onClick={() => finish(task, needsReview ? 'review' : 'done')}
+                            onClick={() => (needsReview ? finish(task, 'review') : setConfirmDone(task))}
                             aria-label={needsReview ? t('dash.sendReviewFor', { title: task.title }) : t('dash.markDoneFor', { title: task.title })}
                           >
                             {needsReview ? t('dash.sendReview') : t('dash.markDone')}
@@ -513,6 +518,20 @@ export function DashboardPage() {
             setTasks((prev) => prev.filter((x) => x.id !== id))
             setEditing(null)
           }}
+        />
+      )}
+      {confirmDone && (
+        <ConfirmDialog
+          title={t('done.confirmTitle')}
+          message={t('done.confirmBody', { title: confirmDone.title })}
+          confirmLabel={t('done.confirm')}
+          tone="primary"
+          busy={busyId === confirmDone.id}
+          onConfirm={async () => {
+            await finish(confirmDone, 'done')
+            setConfirmDone(null)
+          }}
+          onCancel={() => setConfirmDone(null)}
         />
       )}
     </div>

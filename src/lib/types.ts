@@ -61,6 +61,8 @@ export interface Task {
   review_note: string | null
   review_note_by: string | null
   review_note_at: string | null
+  /** Set while the task sits in Trash; trashed tasks only come back through list_trash(). */
+  deleted_at?: string | null
   task_labels: { label_id: string }[]
 }
 

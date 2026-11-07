@@ -10,6 +10,7 @@ import { TASK_STATUSES, type Task, type TaskStatus } from '../lib/types'
 import { ProjectName, StatusChip, STATUS_GLYPH } from '../components/Chips'
 import { EmptyState, ErrorState, LoadingState } from '../components/States'
 import { TaskForm } from './TaskForm'
+import { useTasksChanged } from '../lib/taskEvents'
 
 const MAX_IN_CELL = 3
 
@@ -55,6 +56,7 @@ export function CalendarPage() {
   useEffect(() => {
     load()
   }, [load])
+  useTasksChanged(load)
 
   function setParam(key: string, value: string) {
     setParams(

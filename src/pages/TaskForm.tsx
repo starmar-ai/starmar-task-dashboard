@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import { removeFilesOfTasks } from '../lib/taskFiles'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { canEditTask } from '../lib/permissions'
@@ -18,6 +17,7 @@ import { TaskFiles } from '../components/TaskFiles'
 import { DateChangeDialog, sameDates } from '../components/TaskDateChange'
 
 interface Props {
+  /** A draft with an empty id opens the form in "new task" mode. */
   task: Task
   lookups: ReturnType<typeof useLookups>
   onClose: () => void
@@ -30,7 +30,8 @@ interface Props {
 export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted }: Props) {
   const { t, locale } = useI18n()
   const { profile } = useAuth()
-  const editable = canEditTask(profile, task)
+  const isNew = !task.id
+  const editable = isNew || canEditTask(profile, task)
 
   const [title, setTitle] = useState(task.title)
   const [projectId, setProjectId] = useState(task.project_id)
@@ -50,6 +51,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmDates, setConfirmDates] = useState(false)
+  const [confirmDone, setConfirmDone] = useState(false)
 
   const mover = useTaskMover(() => {
     onChanged?.()
@@ -84,13 +86,47 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
     setError(null)
     if (!title.trim() || !projectId || !deadline) return setError(t('taskForm.required'))
     if (startDate && startDate > deadline) return setError(t('taskForm.startAfterDeadline'))
-    const datesChanged = !sameDates({ start: task.start_date, end: task.deadline }, { start: startDate || null, end: deadline })
+    if (!isNew && status === 'done' && live.status !== 'done' && !confirmDone) return setConfirmDone(true)
+    const datesChanged = !isNew && !sameDates({ start: task.start_date, end: task.deadline }, { start: startDate || null, end: deadline })
     if (datesChanged && !confirmDates) return setConfirmDates(true)
     await save()
   }
 
+  async function create() {
+    setBusy(true)
+    const { data, error: insErr } = await supabase
+      .from('tasks')
+      .insert({
+        title: title.trim(),
+        project_id: projectId,
+        deadline,
+        start_date: startDate || null,
+        priority,
+        assignee_id: assigneeId || null,
+        reviewer_id: reviewerId || null,
+        description: description.trim() || null,
+      })
+      .select('*, task_labels(label_id)')
+      .single()
+    if (insErr) {
+      setBusy(false)
+      return setError(errorMessage(t, insErr))
+    }
+    if (labelIds.length) {
+      const { error: labelErr } = await supabase.from('task_labels').insert(labelIds.map((label_id) => ({ task_id: (data as Task).id, label_id })))
+      if (labelErr) {
+        setBusy(false)
+        return setError(errorMessage(t, labelErr))
+      }
+    }
+    setBusy(false)
+    onSaved(data as Task)
+  }
+
   async function save() {
     setConfirmDates(false)
+    setConfirmDone(false)
+    if (isNew) return create()
     setBusy(true)
     const { error: updErr } = await supabase
       .from('tasks')
@@ -138,9 +174,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
 
   async function onDelete() {
     setBusy(true)
-    // Best effort: a failed file cleanup must not block deleting the task.
-    await removeFilesOfTasks({ taskId: task.id })
-    const { error } = await supabase.from('tasks').delete().eq('id', task.id)
+    const { error } = await supabase.rpc('trash_task', { p_task: task.id })
     setBusy(false)
     setConfirmDelete(false)
     if (error) return setError(errorMessage(t, error))
@@ -156,20 +190,22 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   return (
     <>
       <Modal
-        title={t('taskForm.editTitle')}
+        title={isNew ? t('taskForm.newTitle') : t('taskForm.editTitle')}
         onClose={onClose}
         footer={
           editable ? (
             <>
-              <button type="button" className="btn btn-ghost btn-danger-text" onClick={() => setConfirmDelete(true)}>
-                {t('common.delete')}
-              </button>
+              {!isNew && (
+                <button type="button" className="btn btn-ghost btn-danger-text" onClick={() => setConfirmDelete(true)}>
+                  {t('common.delete')}
+                </button>
+              )}
               <span className="spacer" />
               <button type="button" className="btn btn-secondary" onClick={onClose}>
                 {t('common.cancel')}
               </button>
               <button type="submit" form="task-form" className="btn btn-primary" disabled={busy}>
-                {busy ? t('common.saving') : t('common.save')}
+                {busy ? t('common.saving') : isNew ? t('tasks.add') : t('common.save')}
               </button>
             </>
           ) : (
@@ -223,6 +259,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
                 {t('taskForm.project')} <span className="req" aria-hidden="true">*</span>
               </label>
               <select id="tf-project" required value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+                {isNew && <option value="">{t('tasks.pickProject')}</option>}
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -236,6 +273,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
               </label>
               <input id="tf-deadline" type="date" required value={deadline} onChange={(e) => setDeadline(e.target.value)} />
             </div>
+            {!isNew && (
             <div className="field">
               {live.status === 'blocked' ? (
                 <>
@@ -258,6 +296,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
                 </>
               )}
             </div>
+            )}
             <div className="field">
               <label htmlFor="tf-priority">{t('taskForm.priority')}</label>
               <select id="tf-priority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
@@ -364,31 +403,49 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
             {error}
           </p>
         )}
-        <p className="muted small">
-          {t('taskForm.createdBy', {
-            name: creator?.full_name || creator?.email || '?',
-            date: formatDate(task.created_at.slice(0, 10), locale),
-          })}
-        </p>
-        <TaskDependencies
-          task={task}
-          canManage={editable}
-          onChanged={(fresh) => {
-            setLive(fresh)
-            setStatus(fresh.status)
-            onChanged?.()
-          }}
-        />
-        <TaskFiles taskId={task.id} canManage={editable} people={people} />
-        <TaskComments taskId={task.id} people={people} />
+        {isNew ? (
+          <p className="muted small">{t('taskForm.newHint')}</p>
+        ) : (
+          <>
+            <p className="muted small">
+              {t('taskForm.createdBy', {
+                name: creator?.full_name || creator?.email || '?',
+                date: formatDate(task.created_at.slice(0, 10), locale),
+              })}
+            </p>
+            <TaskDependencies
+              task={task}
+              canManage={editable}
+              onChanged={(fresh) => {
+                setLive(fresh)
+                setStatus(fresh.status)
+                onChanged?.()
+              }}
+            />
+            <TaskFiles taskId={task.id} canManage={editable} people={people} />
+            <TaskComments taskId={task.id} people={people} />
+          </>
+        )}
       </Modal>
       {confirmDelete && (
         <ConfirmDialog
+          title={t('taskForm.deleteTitle')}
           message={t('taskForm.deleteConfirm', { title: task.title })}
-          confirmLabel={t('common.delete')}
+          confirmLabel={t('taskForm.moveToTrash')}
           busy={busy}
           onConfirm={onDelete}
           onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      {confirmDone && (
+        <ConfirmDialog
+          title={t('done.confirmTitle')}
+          message={t('done.confirmBody', { title: task.title })}
+          confirmLabel={t('done.confirm')}
+          tone="primary"
+          busy={busy}
+          onConfirm={save}
+          onCancel={() => setConfirmDone(false)}
         />
       )}
       {confirmDates && (

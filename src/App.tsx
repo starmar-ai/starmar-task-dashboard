@@ -11,6 +11,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { TasksPage } from './pages/TasksPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { TrashPage } from './pages/TrashPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { TeamPage } from './pages/TeamPage'
 
@@ -24,6 +25,23 @@ function useThemeSync(theme: 'light' | 'dark' | undefined) {
       /* storage can be blocked; the profile still holds the choice */
     }
   }, [theme])
+}
+
+/** Clicking anywhere in a date field opens the calendar, not only its small icon. */
+function useDatePickerOnClick() {
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const el = e.target
+      if (!(el instanceof HTMLInputElement) || el.type !== 'date' || el.disabled || el.readOnly) return
+      try {
+        el.showPicker()
+      } catch {
+        /* the browser can refuse without a user gesture; the field still works by typing */
+      }
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [])
 }
 
 function NotFound() {
@@ -42,6 +60,7 @@ function Gate() {
   const { session, profile, loading, profileError, needsPassword, signOut } = useAuth()
   const { t } = useI18n()
   useThemeSync(profile?.theme)
+  useDatePickerOnClick()
 
   if (loading) return <LoadingState />
   if (!session) return <LoginPage />
@@ -84,6 +103,7 @@ function Gate() {
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="team" element={<TeamPage />} />
+        <Route path="trash" element={<TrashPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
