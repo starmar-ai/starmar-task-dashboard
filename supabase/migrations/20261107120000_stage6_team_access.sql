@@ -240,3 +240,9 @@ revoke all on function public.team_status() from public, anon;
 grant execute on function public.is_active_user() to authenticated;
 grant execute on function public.team_status() to authenticated;
 grant execute on function public.user_can_see_project(uuid, uuid) to service_role;
+
+-- The invite function (service key) reads profiles and adds project members. New Supabase tables
+-- are not always open to service_role, so grant exactly what api/team.ts uses.
+grant usage on schema public to service_role;
+grant select, update on public.profiles to service_role;
+grant select, insert on public.project_members to service_role;
