@@ -12,13 +12,13 @@ export interface Scale {
   days: number
 }
 
-/** Axis that fits every date and today, with a little room on both sides so bars never touch the edge. */
+/** Axis that fits every date and today, with weeks of empty room on both sides so the chart can always be scrolled and planned further out. */
 export function buildScale(dates: string[], today: string): Scale {
   const all = [...dates, today]
   const lo = all.reduce((a, b) => (b < a ? b : a))
   const hi = all.reduce((a, b) => (b > a ? b : a))
-  const min = addDays(lo, -3)
-  return { min, days: daysBetween(min, addDays(hi, 10)) + 1 }
+  const min = addDays(lo, -14)
+  return { min, days: daysBetween(min, addDays(hi, 45)) + 1 }
 }
 
 export function defaultZoom(days: number): Zoom {

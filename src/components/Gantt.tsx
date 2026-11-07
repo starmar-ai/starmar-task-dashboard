@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { useI18n } from '../lib/i18n'
 import { addDays, daysBetween } from '../lib/dates'
 import { DAY_WIDTH, buildScale, clampDelta, defaultZoom, dependencyClash, isWeekend, shiftDates, type Dates, type DragMode, type Zoom } from '../lib/gantt'
@@ -182,9 +182,13 @@ export function Gantt({ rows, edges = [], today, onOpen, onChange, nameHeader }:
   const todayX = x(today) + dw / 2
   const hasClash = paths.some((p) => p.clash)
 
-  function jumpToToday() {
-    scroller.current?.scrollTo({ left: Math.max(0, todayX - 260), behavior: 'smooth' })
+  function jumpToToday(behavior: ScrollBehavior = 'smooth') {
+    scroller.current?.scrollTo({ left: Math.max(0, todayX - 200), behavior })
   }
+
+  // Open with today in view, since the axis starts a couple of weeks earlier.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => jumpToToday('instant'), [])
 
   return (
     <section className="gantt-wrap" aria-label={t('gantt.region')}>
@@ -198,7 +202,7 @@ export function Gantt({ rows, edges = [], today, onOpen, onChange, nameHeader }:
             </label>
           ))}
         </fieldset>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={jumpToToday}>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => jumpToToday()}>
           {t('gantt.goToday')}
         </button>
         {onChange && <p className="muted small gantt-hint">{t('gantt.dragHint')}</p>}

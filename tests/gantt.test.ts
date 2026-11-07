@@ -11,8 +11,8 @@ test('addDays crosses month and year ends', () => {
 
 test('buildScale covers all dates and today', () => {
   const s = buildScale(['2026-11-10', '2026-11-20'], '2026-11-07')
-  assert.equal(s.min, '2026-11-04')
-  assert.equal(addDays(s.min, s.days - 1), '2026-11-30')
+  assert.equal(s.min, '2026-10-24')
+  assert.equal(addDays(s.min, s.days - 1), '2027-01-04')
 })
 
 test('defaultZoom gets coarser with longer ranges', () => {
