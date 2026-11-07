@@ -8,7 +8,7 @@ const id = {
   'nav.settings': 'Pengaturan',
   'nav.trash': 'Trash',
   'tasks.pickProject': 'Pilih proyek',
-  'tasks.showDetails': 'Show details',
+  'tasks.showDetails': 'Lihat detail',
   'tasks.added': 'Tugas "{title}" ditambahkan.',
   'taskForm.newHint': 'Label, waiting list, file, dan komentar bisa ditambah setelah tugasnya dibuat.',
   'taskForm.deleteTitle': 'Pindahkan ke Trash',
