@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { errorMessage, useI18n } from '../lib/i18n'
+import { useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
+import { useTasksChanged } from '../lib/taskEvents'
 import { useLookups } from '../lib/useTeam'
 import { daysBetween, formatDate, todayIn } from '../lib/dates'
 import { canReview, indexDependencies } from '../lib/taskFlow'
@@ -35,13 +36,6 @@ export function TasksPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Task | null>(null)
 
-  const [title, setTitle] = useState('')
-  const [quickProject, setQuickProject] = useState('')
-  const [deadline, setDeadline] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [quickError, setQuickError] = useState<string | null>(null)
-  const titleRef = useRef<HTMLInputElement>(null)
-
   const timezone = profile?.timezone ?? 'Asia/Jakarta'
   const today = todayIn(timezone)
 
@@ -67,8 +61,8 @@ export function TasksPage() {
   useEffect(() => {
     load()
   }, [load])
+  useTasksChanged(load)
 
-  const activeProjects = useMemo(() => lookups.projects.filter((p) => !p.archived), [lookups.projects])
   const projectById = useMemo(() => new Map(lookups.projects.map((p) => [p.id, p])), [lookups.projects])
   const personById = useMemo(() => new Map(lookups.people.map((p) => [p.id, p])), [lookups.people])
   const labelById = useMemo(() => new Map(lookups.labels.map((l) => [l.id, l])), [lookups.labels])
@@ -94,11 +88,6 @@ export function TasksPage() {
       { replace: key === 'view' },
     )
   }
-
-  useEffect(() => {
-    if (projectFilter) setQuickProject(projectFilter)
-    else if (!quickProject && activeProjects[0]) setQuickProject(activeProjects[0].id)
-  }, [projectFilter, activeProjects, quickProject])
 
   const inScope = tasks.filter((task) => {
     if (projectFilter) return task.project_id === projectFilter
@@ -140,26 +129,6 @@ export function TasksPage() {
     const ids = new Set(ganttRows.map((r) => r.id))
     return deps.filter((d) => ids.has(d.task_id) && ids.has(d.depends_on_id)).map((d) => ({ from: d.depends_on_id, to: d.task_id }))
   }, [ganttRows, deps])
-
-  async function onQuickAdd(e: FormEvent) {
-    e.preventDefault()
-    setQuickError(null)
-    if (!title.trim() || !quickProject || !deadline) {
-      setQuickError(t('taskForm.required'))
-      return
-    }
-    setAdding(true)
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert({ title: title.trim(), project_id: quickProject, deadline })
-      .select('*, task_labels(label_id)')
-      .single()
-    setAdding(false)
-    if (error) return setQuickError(errorMessage(t, error))
-    setTasks((prev) => [...prev, data as Task].sort((a, b) => a.deadline.localeCompare(b.deadline)))
-    setTitle('')
-    titleRef.current?.focus()
-  }
 
   const noProjects = !lookups.loading && lookups.projects.length === 0
   const isAdmin = profile?.role === 'admin'
@@ -223,44 +192,7 @@ export function TasksPage() {
         >
           {isAdmin ? t('tasks.emptyNoProject') : t('tasks.emptyNoProjectMember')}
         </EmptyState>
-      ) : (
-        <form className="quick-add" onSubmit={onQuickAdd} aria-label={t('tasks.add')}>
-          <div className="field quick-title">
-            <label htmlFor="quick-title">{t('tasks.quickTitle')}</label>
-            <input
-              id="quick-title"
-              ref={titleRef}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('tasks.quickPlaceholder')}
-              maxLength={200}
-              autoComplete="off"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="quick-project">{t('taskForm.project')}</label>
-            <select id="quick-project" value={quickProject} onChange={(e) => setQuickProject(e.target.value)}>
-              {activeProjects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="quick-deadline">{t('taskForm.deadline')}</label>
-            <input id="quick-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={adding}>
-            {adding ? t('tasks.adding') : t('tasks.add')}
-          </button>
-          {quickError && (
-            <p className="form-error quick-error" role="alert">
-              {quickError}
-            </p>
-          )}
-        </form>
-      )}
+      ) : null}
 
       {mover.error && (
         <p className="form-error" role="alert">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
@@ -10,6 +10,7 @@ import { TASK_STATUSES, type Task, type TaskStatus } from '../lib/types'
 import { ProjectName, StatusChip, STATUS_GLYPH } from '../components/Chips'
 import { EmptyState, ErrorState, LoadingState } from '../components/States'
 import { TaskForm } from './TaskForm'
+import { useTasksChanged } from '../lib/taskEvents'
 
 const MAX_IN_CELL = 3
 
@@ -31,6 +32,7 @@ export function CalendarPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Task | null>(null)
   const [selected, setSelected] = useState<string>(today)
+  const agendaRef = useRef<HTMLElement>(null)
   const [showDone, setShowDone] = useState(true)
 
   const load = useCallback(async () => {
@@ -44,6 +46,7 @@ export function CalendarPage() {
   useEffect(() => {
     load()
   }, [load])
+  useTasksChanged(load)
 
   function setParam(key: string, value: string) {
     setParams(
@@ -229,7 +232,20 @@ export function CalendarPage() {
                       {isToday && <span className="cal-today-tag">{t('gantt.today')}</span>}
                       <div className="cal-day-tasks">
                         {list.slice(0, MAX_IN_CELL).map((task) => chipFor(task, true))}
-                        {list.length > MAX_IN_CELL && <span className="cal-more">{t('cal.more', { n: list.length - MAX_IN_CELL })}</span>}
+                        {list.length > MAX_IN_CELL && (
+                          <button
+                            type="button"
+                            className="cal-more"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelected(d)
+                              requestAnimationFrame(() => agendaRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }))
+                            }}
+                            aria-label={`${t('cal.more', { n: list.length - MAX_IN_CELL })}, ${formatDate(d, locale)}`}
+                          >
+                            {t('cal.more', { n: list.length - MAX_IN_CELL })}
+                          </button>
+                        )}
                       </div>
                       {list.length > 0 && (
                         <span className={`cal-dots ${late ? 'is-late' : ''}`} aria-hidden="true">
@@ -243,7 +259,7 @@ export function CalendarPage() {
             ))}
           </div>
 
-          <section className="card cal-agenda" aria-live="polite">
+          <section className="card cal-agenda" aria-live="polite" ref={agendaRef}>
             <h2 className="cal-agenda-title">
               {formatDate(selected, locale)}
               {selected === today && <span className="chip chip-today">{t('gantt.today')}</span>}

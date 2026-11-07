@@ -3,8 +3,11 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../lib/i18n'
 import { Avatar } from './Chips'
+import { QuickAddTask } from './QuickAddTask'
+import { purgeExpired } from '../lib/trash'
+import { todayIn } from '../lib/dates'
 
-function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'team' | 'settings' }) {
+function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'team' | 'trash' | 'settings' }) {
   const common = { stroke: 'currentColor', strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -37,6 +40,11 @@ function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calenda
           <path d="M3.5 19a5.5 5.5 0 0111 0M15.5 5.8a3 3 0 010 5.4M17.5 14.2a5.5 5.5 0 013 4.8" {...common} />
         </>
       )}
+      {name === 'trash' && (
+        <>
+          <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 11v5M14 11v5" {...common} />
+        </>
+      )}
       {name === 'settings' && (
         <>
           <path d="M4 7h10M18 7h2M4 17h4M12 17h8" {...common} />
@@ -55,6 +63,12 @@ export function AppShell() {
   const location = useLocation()
 
   useEffect(() => setOpen(false), [location.pathname, location.search])
+
+  // Trash entries older than 30 days go for good once the signed-in user opens the app.
+  const timezone = profile?.timezone
+  useEffect(() => {
+    if (timezone) purgeExpired(todayIn(timezone))
+  }, [timezone])
 
   useEffect(() => {
     if (!open) return
@@ -121,6 +135,12 @@ export function AppShell() {
               </li>
             )}
             <li>
+              <NavLink to="/trash" className="nav-link">
+                <NavIcon name="trash" />
+                {t('nav.trash')}
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/settings" className="nav-link">
                 <NavIcon name="settings" />
                 {t('nav.settings')}
@@ -157,6 +177,7 @@ export function AppShell() {
       <main className="main" id="main">
         <Outlet />
       </main>
+      <QuickAddTask />
     </div>
   )
 }

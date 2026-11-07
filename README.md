@@ -29,6 +29,13 @@ Jalankan sekali saja, setelah update komentar/link/file di bawah sudah pernah di
 2. Copy semua isi file `supabase/migrations/20261107060000_stage3_dependencies_review.sql`, paste, lalu klik **Run**. Harus muncul "Success. No rows returned".
 3. Cek di **Table Editor**: harus ada tabel baru `task_dependencies`.
 
+## Update database: Trash untuk tugas
+
+Hapus tugas sekarang masuk ke halaman **Trash** (bisa dipulihkan, otomatis dihapus permanen setelah 30 hari). Jalankan sekali saja, setelah update-update database sebelumnya:
+
+1. Buka Supabase > project kamu > **SQL Editor** > **New query**.
+2. Copy semua isi file `supabase/migrations/20261107140000_task_trash.sql`, paste, lalu klik **Run**. Harus muncul "Success. No rows returned".
+
 ## Update database: komentar, link, dan file di tugas
 
 Fitur ini butuh tabel baru dan tempat simpan file di Supabase. Jalankan sekali saja:

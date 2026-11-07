@@ -50,12 +50,16 @@ export function Modal({ title, onClose, children, footer, size = 'md' }: Props) 
 }
 
 export function ConfirmDialog({
+  title,
+  tone = 'danger',
   message,
   confirmLabel,
   onConfirm,
   onCancel,
   busy,
 }: {
+  title?: string
+  tone?: 'danger' | 'primary'
   message: string
   confirmLabel: string
   onConfirm: () => void
@@ -65,7 +69,7 @@ export function ConfirmDialog({
   const { t } = useI18n()
   return (
     <Modal
-      title={confirmLabel}
+      title={title ?? confirmLabel}
       onClose={onCancel}
       size="sm"
       footer={
@@ -73,7 +77,7 @@ export function ConfirmDialog({
           <button type="button" className="btn btn-secondary" onClick={onCancel}>
             {t('common.cancel')}
           </button>
-          <button type="button" className="btn btn-danger" onClick={onConfirm} disabled={busy}>
+          <button type="button" className={`btn ${tone === 'primary' ? 'btn-primary' : 'btn-danger'}`} onClick={onConfirm} disabled={busy}>
             {confirmLabel}
           </button>
         </>
