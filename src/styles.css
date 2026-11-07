@@ -1323,6 +1323,17 @@ input[type='radio'] {
   font-size: 0.9rem;
 }
 
+/* Long project names wrap inside lists; keep the swatch on the first line instead of centred. */
+.dash-row-meta .project-name {
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.dash-row-meta .swatch {
+  flex-shrink: 0;
+  margin-top: 0.3em;
+}
+
 .dash-deadline {
   display: inline-flex;
   align-items: center;
