@@ -30,9 +30,10 @@ Status sekarang: **Tahap 1 (Fondasi)**. Isinya login undangan, role Admin/Member
 2. Klik **New project**. Isi nama `starmar-task-dashboard`, buat password database (simpan baik-baik), region **Southeast Asia (Singapore)**, plan **Free**.
 3. Tunggu sampai project siap (1 sampai 2 menit).
 4. Buka menu **SQL Editor** > **New query**. Copy semua isi file `supabase/migrations/20261106180000_stage1_foundation.sql`, paste, lalu klik **Run**. Harus muncul "Success".
-5. Buka **Authentication** > **Sign In / Providers** > **Email**. Matikan **Allow new users to sign up**, lalu Save. (Ini yang bikin login cuma lewat undangan.)
-6. Buka **Authentication** > **Users** > **Add user** > **Create new user**. Isi email dan password kamu, centang **Auto Confirm User**. Akun pertama ini otomatis jadi Admin.
-7. Buka **Project Settings** > **API Keys** (atau **Data API**). Catat dua nilai: **Project URL** dan **anon / publishable key**.
+5. Buat query baru lagi, copy isi `supabase/migrations/20261107030000_grant_authenticated.sql`, lalu **Run**. (Ini ngasih izin akses ke user yang login. Tanpa ini muncul "permission denied for table profiles".)
+6. Buka **Authentication** > **Sign In / Providers** > **Email**. Matikan **Allow new users to sign up**, lalu Save. (Ini yang bikin login cuma lewat undangan.)
+7. Buka **Authentication** > **Users** > **Add user** > **Create new user**. Isi email dan password kamu, centang **Auto Confirm User**. Akun pertama ini otomatis jadi Admin.
+8. Buka **Project Settings** > **API Keys** (atau **Data API**). Catat dua nilai: **Project URL** dan **anon / publishable key**.
 
 ### 2. Vercel (hosting)
 
@@ -44,7 +45,7 @@ Status sekarang: **Tahap 1 (Fondasi)**. Isinya login undangan, role Admin/Member
 4. Klik **Deploy**. Setelah selesai, Vercel kasih link seperti `https://starmar-task-dashboard.vercel.app`.
 5. Balik ke Supabase > **Authentication** > **URL Configuration**. Isi **Site URL** dengan link Vercel tadi, lalu Save. (Supaya link reset password dan undangan mengarah ke aplikasi.)
 
-Buka link Vercel, masuk dengan email dan password dari langkah 1.6.
+Buka link Vercel, masuk dengan email dan password dari langkah 1.7.
 
 ### Menambah anggota (sementara, sebelum Tahap 6)
 
