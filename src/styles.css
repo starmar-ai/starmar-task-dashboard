@@ -1084,6 +1084,9 @@ input[type='radio'] {
 }
 
 .modal-body {
+  /* Containing block for visually hidden controls (.sr-only, e.g. the file input).
+     Without it they sit outside the scroll area and make the dialog itself scroll. */
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 1rem;
