@@ -41,9 +41,10 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #1e1d4a;
-  --surface: #2b2a6b;
-  --surface-2: #25245c;
+  --bg: #1a1944; /* panel utama: paling gelap */
+  --surface: #252462; /* kartu: satu tingkat di atas panel */
+  --surface-2: #2e2d74; /* input dan area dalam kartu: satu tingkat di atas kartu */
+  --sidebar: #2b2a6b; /* sidebar: lebih terang dari panel supaya terbaca sebagai area sendiri */
   --text: var(--cream);
   --muted: #c9c7ea;
   --line: var(--lavender);
@@ -584,7 +585,7 @@ input[type='radio'] {
 }
 
 :root[data-theme='dark'] .sidebar {
-  background: #16153a;
+  background: var(--sidebar);
 }
 
 .sidebar-brand {
