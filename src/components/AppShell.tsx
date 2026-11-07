@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../lib/i18n'
 import { Avatar } from './Chips'
 
-function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'settings' }) {
+function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'team' | 'settings' }) {
   const common = { stroke: 'currentColor', strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -29,6 +29,12 @@ function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calenda
         <>
           <rect x="3.5" y="5" width="17" height="15" rx="3" {...common} />
           <path d="M3.5 10h17M8 3v4M16 3v4" {...common} />
+        </>
+      )}
+      {name === 'team' && (
+        <>
+          <circle cx="9" cy="8.5" r="3" {...common} />
+          <path d="M3.5 19a5.5 5.5 0 0111 0M15.5 5.8a3 3 0 010 5.4M17.5 14.2a5.5 5.5 0 013 4.8" {...common} />
         </>
       )}
       {name === 'settings' && (
@@ -106,6 +112,14 @@ export function AppShell() {
                 {t('nav.calendar')}
               </NavLink>
             </li>
+            {profile?.role === 'admin' && (
+              <li>
+                <NavLink to="/team" className="nav-link">
+                  <NavIcon name="team" />
+                  {t('nav.team')}
+                </NavLink>
+              </li>
+            )}
             <li>
               <NavLink to="/settings" className="nav-link">
                 <NavIcon name="settings" />

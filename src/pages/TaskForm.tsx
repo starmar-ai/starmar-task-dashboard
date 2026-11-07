@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { canEditTask } from '../lib/permissions'
 import { canReview, needsReviewer } from '../lib/taskFlow'
 import { formatDate, formatDateTime } from '../lib/dates'
+import { pickablePeople } from '../lib/team'
 import type { useLookups } from '../lib/useTeam'
 import { PRIORITIES, SWATCHES, type Label, type Priority, type Task, type TaskStatus } from '../lib/types'
 import { ConfirmDialog, Modal } from '../components/Modal'
@@ -147,6 +148,10 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   }
 
   const people = lookups.people
+  const selectedProject = lookups.projects.find((p) => p.id === projectId)
+  const pickable = pickablePeople(people, selectedProject, lookups.members, [assigneeId, reviewerId])
+  const outsider = (id: string) => !!id && !pickablePeople(people, selectedProject, lookups.members).some((p) => p.id === id)
+  const reviewerLocked = !(profile?.role === 'admin' || task.created_by === profile?.id)
 
   return (
     <>
@@ -267,25 +272,37 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
               <label htmlFor="tf-assignee">{t('taskForm.assignee')}</label>
               <select id="tf-assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
                 <option value="">{t('common.none')}</option>
-                {people.map((p) => (
+                {pickable.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.full_name || p.email}
+                    {`${p.full_name || p.email}${outsider(p.id) ? ` (${t('team.noAccessShort')})` : ''}`}
                   </option>
                 ))}
               </select>
+              {(outsider(assigneeId) || outsider(reviewerId)) && <span className="muted small">{t('team.pickHint')}</span>}
             </div>
             <div className="field">
               <label htmlFor="tf-reviewer">
                 {t('taskForm.reviewer')} <span className="muted">({t('common.optional')})</span>
               </label>
-              <select id="tf-reviewer" value={reviewerId} onChange={(e) => setReviewerId(e.target.value)}>
+              <select
+                id="tf-reviewer"
+                value={reviewerId}
+                disabled={reviewerLocked}
+                aria-describedby={reviewerLocked ? 'tf-reviewer-note' : undefined}
+                onChange={(e) => setReviewerId(e.target.value)}
+              >
                 <option value="">{t('common.none')}</option>
-                {people.map((p) => (
+                {pickable.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.full_name || p.email}
+                    {`${p.full_name || p.email}${outsider(p.id) ? ` (${t('team.noAccessShort')})` : ''}`}
                   </option>
                 ))}
               </select>
+              {reviewerLocked && (
+                <span id="tf-reviewer-note" className="muted small">
+                  {t('taskForm.reviewerLocked')}
+                </span>
+              )}
             </div>
             <div className="field">
               <label htmlFor="tf-start">

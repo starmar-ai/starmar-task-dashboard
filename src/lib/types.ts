@@ -13,6 +13,8 @@ export interface Profile {
   locale: Locale
   timezone: string
   theme: Theme
+  /** False when the admin revoked access, or the account was not made through an invite. */
+  active: boolean
 }
 
 export interface Project {
