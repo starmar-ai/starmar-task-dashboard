@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
-import { useAuth } from '../auth/AuthProvider'
+import { setPendingPassword, useAuth } from '../auth/AuthProvider'
 
 export function SetPasswordPage() {
   const { t } = useI18n()
@@ -20,6 +20,7 @@ export function SetPasswordPage() {
     setBusy(false)
     if (error) return setError(error.message)
     history.replaceState(null, '', '/dashboard')
+    setPendingPassword(false)
     setNeedsPassword(false)
   }
 
