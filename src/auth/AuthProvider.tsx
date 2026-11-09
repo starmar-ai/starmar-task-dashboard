@@ -36,7 +36,7 @@ export function setPendingPassword(v: boolean) {
     /* storage can be blocked; the in-memory flag still works for this load */
   }
 }
-const arrivedFromEmailLink = /type=(invite|recovery)/.test(window.location.hash)
+const arrivedFromEmailLink = /type=(invite|recovery|signup|magiclink)/.test(window.location.hash)
 if (arrivedFromEmailLink) setPendingPassword(true)
 
 /** An invite or reset link that was opened already (email scanners do this) or has expired comes back with an error in the URL. */
