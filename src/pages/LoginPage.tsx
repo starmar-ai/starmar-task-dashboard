@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../lib/i18n'
+import { emailLinkError } from '../auth/AuthProvider'
 
 export function LoginPage() {
   const { t } = useI18n()
@@ -8,7 +9,9 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [info, setInfo] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(
+    emailLinkError === 'expired' ? t('login.linkExpired') : emailLinkError ? t('login.linkError') : null,
+  )
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
