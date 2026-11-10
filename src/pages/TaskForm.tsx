@@ -15,6 +15,9 @@ import { ReviewButtons, useTaskMover } from '../components/TaskMover'
 import { TaskComments } from '../components/TaskComments'
 import { TaskFiles } from '../components/TaskFiles'
 import { DateChangeDialog, sameDates } from '../components/TaskDateChange'
+import { emitRequestsChanged } from '../lib/requestEvents'
+import { ChangeRequestDialog } from '../components/ChangeRequestDialog'
+import { TaskChangeRequests } from '../components/ChangeRequestCard'
 
 interface Props {
   /** A draft with an empty id opens the form in "new task" mode. */
@@ -52,6 +55,8 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmDates, setConfirmDates] = useState(false)
   const [confirmDone, setConfirmDone] = useState(false)
+  const [asking, setAsking] = useState(false)
+  const [requestsKey, setRequestsKey] = useState(0)
 
   const mover = useTaskMover(() => {
     onChanged?.()
@@ -209,9 +214,17 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
               </button>
             </>
           ) : (
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              {t('common.close')}
-            </button>
+            <>
+              {!isNew && (
+                <button type="button" className="btn btn-primary" onClick={() => setAsking(true)}>
+                  {t('cr.ask')}
+                </button>
+              )}
+              <span className="spacer" />
+              <button type="button" className="btn btn-secondary" onClick={onClose}>
+                {t('common.close')}
+              </button>
+            </>
           )
         }
       >
@@ -413,6 +426,15 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
                 date: formatDate(task.created_at.slice(0, 10), locale),
               })}
             </p>
+            <TaskChangeRequests
+              task={task}
+              people={people}
+              refreshKey={requestsKey}
+              onChanged={() => {
+                onChanged?.()
+                onClose()
+              }}
+            />
             <TaskDependencies
               task={task}
               canManage={editable}
@@ -458,6 +480,18 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
           error={null}
           onConfirm={save}
           onCancel={() => setConfirmDates(false)}
+        />
+      )}
+      {asking && (
+        <ChangeRequestDialog
+          task={task}
+          lookups={lookups}
+          onClose={() => setAsking(false)}
+          onSent={() => {
+            setAsking(false)
+            emitRequestsChanged()
+            setRequestsKey((k) => k + 1)
+          }}
         />
       )}
       {mover.dialog}

@@ -14,6 +14,8 @@ import { SettingsPage } from './pages/SettingsPage'
 import { TrashPage } from './pages/TrashPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { TeamPage } from './pages/TeamPage'
+import { WorkloadPage } from './pages/WorkloadPage'
+import { RequestsPage } from './pages/RequestsPage'
 
 function useThemeSync(theme: 'light' | 'dark' | undefined) {
   useEffect(() => {
@@ -102,6 +104,8 @@ function Gate() {
         <Route path="tasks" element={<TasksPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="calendar" element={<CalendarPage />} />
+        <Route path="workload" element={<WorkloadPage />} />
+        <Route path="requests" element={<RequestsPage />} />
         <Route path="team" element={<TeamPage />} />
         <Route path="trash" element={<TrashPage />} />
         <Route path="settings" element={<SettingsPage />} />
