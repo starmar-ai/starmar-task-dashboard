@@ -3253,3 +3253,263 @@ button.cal-more:focus-visible {
 .cal-agenda:focus {
   outline: none;
 }
+
+/* Change requests ("Ajukan perubahan") ----------------------------------- */
+
+.cr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.cr-card p {
+  margin: 0;
+}
+
+.cr-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.cr-task-title {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.cr-change {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+}
+
+.cr-reason {
+  overflow-wrap: anywhere;
+}
+
+.cr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.cr-task {
+  overflow-wrap: anywhere;
+}
+
+.chip-cr-pending {
+  background: var(--yellow);
+  color: var(--on-color);
+}
+
+.chip-cr-approved {
+  background: var(--teal-light);
+  color: var(--on-color);
+}
+
+.chip-cr-cancelled {
+  border-style: dashed;
+}
+
+.cr-stale-banner {
+  margin: 0;
+}
+
+.nav-badge {
+  margin-left: auto;
+  min-width: 1.5rem;
+  padding: 0.05rem 0.45rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--on-color);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Workload ---------------------------------------------------------------- */
+
+.wl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.wl-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wl-legend .wl-seg {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+}
+
+.wl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-row {
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.wl-main {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 4.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+.wl-person {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.wl-person > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.wl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.wl-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.wl-number {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.wl-bar {
+  display: flex;
+  height: 2rem;
+  min-width: 2.5rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.wl-seg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--on-color);
+}
+
+.wl-seg + .wl-seg {
+  border-left: 2px solid var(--line);
+}
+
+.wl-seg-overdue {
+  background: var(--coral);
+}
+
+.wl-seg-week {
+  background: var(--yellow);
+}
+
+.wl-seg-later {
+  background: var(--periwinkle);
+}
+
+.wl-tasks {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 1rem 0.5rem;
+  list-style: none;
+  border-top: 2px solid var(--line);
+}
+
+.wl-tasks li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 0.6rem 0;
+}
+
+.wl-tasks li + li {
+  border-top: 1px dashed var(--line);
+}
+
+.wl-task-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+  .wl-main {
+    grid-template-columns: 1fr auto;
+  }
+
+  .wl-person {
+    grid-column: 1;
+  }
+
+  .wl-count {
+    grid-column: 2;
+    grid-row: 1;
+    align-items: flex-end;
+  }
+
+  .wl-bar {
+    grid-column: 1 / -1;
+  }
+
+  .wl-toggle {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../lib/i18n'
 import { Avatar } from './Chips'
 import { QuickAddTask } from './QuickAddTask'
+import { supabase } from '../lib/supabase'
+import { useRequestsChanged } from '../lib/requestEvents'
 import { purgeExpired } from '../lib/trash'
 import { todayIn } from '../lib/dates'
 
-function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'team' | 'trash' | 'settings' }) {
+function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'workload' | 'requests' | 'team' | 'trash' | 'settings' }) {
   const common = { stroke: 'currentColor', strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -32,6 +34,19 @@ function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calenda
         <>
           <rect x="3.5" y="5" width="17" height="15" rx="3" {...common} />
           <path d="M3.5 10h17M8 3v4M16 3v4" {...common} />
+        </>
+      )}
+      {name === 'workload' && (
+        <>
+          <path d="M4 6h9M4 12h14M4 18h6" {...common} />
+          <circle cx="17" cy="6" r="1.6" {...common} />
+          <circle cx="21" cy="12" r="0.4" {...common} />
+        </>
+      )}
+      {name === 'requests' && (
+        <>
+          <path d="M4.5 6.5a2 2 0 012-2h11a2 2 0 012 2v8a2 2 0 01-2 2H11l-4.5 3.5v-3.5a2 2 0 01-2-2z" {...common} />
+          <path d="M8.5 10h7M8.5 13h4" {...common} />
         </>
       )}
       {name === 'team' && (
@@ -63,6 +78,23 @@ export function AppShell() {
   const location = useLocation()
 
   useEffect(() => setOpen(false), [location.pathname, location.search])
+
+  // Open change requests waiting for this person's decision (their own requests do not count).
+  const [pendingRequests, setPendingRequests] = useState(0)
+  const myId = profile?.id
+  const loadPending = useCallback(async () => {
+    if (!myId) return
+    const { count } = await supabase
+      .from('change_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .neq('requester_id', myId)
+    setPendingRequests(count ?? 0)
+  }, [myId])
+  useEffect(() => {
+    loadPending()
+  }, [loadPending, location.pathname])
+  useRequestsChanged(loadPending)
 
   // Trash entries older than 30 days go for good once the signed-in user opens the app.
   const timezone = profile?.timezone
@@ -124,6 +156,23 @@ export function AppShell() {
               <NavLink to="/calendar" className="nav-link">
                 <NavIcon name="calendar" />
                 {t('nav.calendar')}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/workload" className="nav-link">
+                <NavIcon name="workload" />
+                {t('nav.workload')}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/requests" className="nav-link" aria-label={pendingRequests > 0 ? t('nav.requestsCount', { n: pendingRequests }) : undefined}>
+                <NavIcon name="requests" />
+                {t('nav.requests')}
+                {pendingRequests > 0 && (
+                  <span className="nav-badge" aria-hidden="true">
+                    {pendingRequests}
+                  </span>
+                )}
               </NavLink>
             </li>
             {profile?.role === 'admin' && (
