@@ -311,6 +311,19 @@ textarea {
   resize: vertical;
 }
 
+/* iOS Safari centers date text and gives it extra inner padding; match the other fields. */
+input[type='date'] {
+  display: block;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--muted);
