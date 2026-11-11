@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { canEditTask } from '../lib/permissions'
-import { canReview, needsReviewer } from '../lib/taskFlow'
+import { canReopen, canReview, needsReviewer } from '../lib/taskFlow'
 import { formatDate, formatDateTime } from '../lib/dates'
 import { pickablePeople } from '../lib/team'
 import type { useLookups } from '../lib/useTeam'
@@ -203,6 +203,16 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
     onSaved(data as Task)
   }
 
+  async function reopen() {
+    setError(null)
+    setBusy(true)
+    const { error: reopenErr } = await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', task.id)
+    setBusy(false)
+    if (reopenErr) return setError(errorMessage(t, reopenErr))
+    onChanged?.()
+    onClose()
+  }
+
   async function onDelete() {
     setBusy(true)
     const { error } = await supabase.rpc('trash_task', { p_task: task.id })
@@ -241,9 +251,14 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
             </>
           ) : (
             <>
-              {!isNew && (
+              {!isNew && !task.project_archived && (
                 <button type="button" className="btn btn-primary" onClick={() => setAsking(true)}>
                   {t('cr.ask')}
+                </button>
+              )}
+              {canReopen(profile, task) && (
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={reopen}>
+                  {busy ? t('common.saving') : t('taskForm.reopen')}
                 </button>
               )}
               <span className="spacer" />
@@ -254,7 +269,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
           )
         }
       >
-        {!editable && <p className="form-info">{t('taskForm.readOnly')}</p>}
+        {!editable && <p className="form-info">{task.project_archived ? t(canReopen(profile, task) ? 'taskForm.archivedReopen' : 'taskForm.archivedReadOnly') : t('taskForm.readOnly')}</p>}
         {task.review_note && live.status !== 'done' && (
           <div className="review-note" role="note">
             <p className="review-note-head">

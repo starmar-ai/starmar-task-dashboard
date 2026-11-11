@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useI18n } from '../lib/i18n'
+import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { useTasksChanged } from '../lib/taskEvents'
 import { useLookups } from '../lib/useTeam'
@@ -34,7 +34,8 @@ export function TasksPage() {
   const projectFilter = filter.project
   const view: View = params.get('view') === 'board' ? 'board' : params.get('view') === 'gantt' ? 'gantt' : 'table'
 
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [rawTasks, setTasks] = useState<Task[]>([])
+  const [restoreError, setRestoreError] = useState<string | null>(null)
   const [deps, setDeps] = useState<TaskDependency[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -70,6 +71,8 @@ export function TasksPage() {
   useTasksChanged(load)
 
   const projectById = useMemo(() => new Map(lookups.projects.map((p) => [p.id, p])), [lookups.projects])
+  // Tasks of an archived project are read-only everywhere on this page (table, board, timeline, bulk, task window).
+  const tasks = useMemo(() => rawTasks.map((x) => (projectById.get(x.project_id)?.archived ? { ...x, project_archived: true } : x)), [rawTasks, projectById])
   const personById = useMemo(() => new Map(lookups.people.map((p) => [p.id, p])), [lookups.people])
   const labelById = useMemo(() => new Map(lookups.labels.map((l) => [l.id, l])), [lookups.labels])
   const taskById = useMemo(() => new Map(tasks.map((x) => [x.id, x])), [tasks])
@@ -115,7 +118,9 @@ export function TasksPage() {
     [tasks, filter, filterCtx, projectFilter, projectById],
   )
   const filtered = isFiltered(filter)
-  const showDone = filter.done || filter.status === 'done'
+  const projectArchived = !!(projectFilter && projectById.get(projectFilter)?.archived)
+  // An archived project has only Done tasks: show them instead of an empty list.
+  const showDone = filter.done || filter.status === 'done' || projectArchived
   const visible = inScope.filter((task) => showDone || task.status !== 'done')
 
   // Quick search sends people here with ?open=<task id>.
@@ -189,6 +194,14 @@ export function TasksPage() {
   const noProjects = !lookups.loading && lookups.projects.length === 0
   const isAdmin = profile?.role === 'admin'
 
+  async function restoreProject() {
+    if (!currentProject) return
+    const { error } = await supabase.from('projects').update({ archived: false, status: 'aktif' }).eq('id', currentProject.id)
+    if (error) return setRestoreError(errorMessage(t, error))
+    setRestoreError(null)
+    lookups.reload()
+  }
+
   return (
     <div className="page">
       <header className="page-head">
@@ -229,7 +242,7 @@ export function TasksPage() {
           </div>
           {view === 'table' && (
             <label className="check">
-              <input type="checkbox" checked={showDone} disabled={filter.status === 'done'} onChange={(e) => writeFilter({ ...filter, done: e.target.checked })} />
+              <input type="checkbox" checked={showDone} disabled={filter.status === 'done' || projectArchived} onChange={(e) => writeFilter({ ...filter, done: e.target.checked })} />
               {t('tasks.showDone')}
             </label>
           )}
@@ -245,6 +258,23 @@ export function TasksPage() {
           onApply={(query) => writeFilter(parseFilter(new URLSearchParams(query)))}
           onReset={() => writeFilter({ ...parseFilter(new URLSearchParams()), sort: 'deadline' })}
         />
+      )}
+
+      {currentProject?.archived && (
+        <p className="archive-banner" role="note">
+          {t('tasks.archivedBanner')}
+          {isAdmin && (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={restoreProject}>
+              {t('projects.restore')}
+            </button>
+          )}
+        </p>
+      )}
+
+      {restoreError && (
+        <p className="form-error" role="alert">
+          {restoreError}
+        </p>
       )}
 
       {noProjects ? (

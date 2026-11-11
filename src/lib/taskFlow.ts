@@ -10,9 +10,15 @@ export function isAdmin(me: Me): boolean {
   return me?.role === 'admin'
 }
 
-export function canEdit(me: Me, task: Pick<Task, 'assignee_id' | 'created_by'>): boolean {
-  if (!me) return false
+/** Tasks of an archived project are read-only; see canReopen for the one way back. */
+export function canEdit(me: Me, task: Pick<Task, 'assignee_id' | 'created_by' | 'project_archived'>): boolean {
+  if (!me || task.project_archived) return false
   return isAdmin(me) || task.assignee_id === me.id || task.created_by === me.id
+}
+
+/** Whether this person could edit the task if its project were not archived: they may reopen it. */
+export function canReopen(me: Me, task: Pick<Task, 'assignee_id' | 'created_by' | 'status' | 'project_archived'>): boolean {
+  return !!task.project_archived && task.status === 'done' && canEdit(me, { ...task, project_archived: false })
 }
 
 /** The reviewer named on the task, or the admin. Only meaningful when the task has a reviewer. */
