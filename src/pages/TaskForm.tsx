@@ -13,6 +13,7 @@ import { StatusChip } from '../components/Chips'
 import { TaskDependencies } from '../components/TaskDependencies'
 import { ReviewButtons, useTaskMover } from '../components/TaskMover'
 import { TaskComments } from '../components/TaskComments'
+import { TaskChecklist } from '../components/TaskChecklist'
 import { TaskFiles } from '../components/TaskFiles'
 import { DateChangeDialog, sameDates } from '../components/TaskDateChange'
 import { emitRequestsChanged } from '../lib/requestEvents'
@@ -444,6 +445,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
                 onChanged?.()
               }}
             />
+            <TaskChecklist task={task} canManage={editable} onChanged={onChanged} />
             <TaskFiles taskId={task.id} canManage={editable} people={people} />
             <TaskComments taskId={task.id} people={people} />
           </>

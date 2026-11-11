@@ -64,6 +64,8 @@ export interface Task {
   /** Set while the task sits in Trash; trashed tasks only come back through list_trash(). */
   deleted_at?: string | null
   task_labels: { label_id: string }[]
+  /** Only present when the page asked for it (task list and board): used for the checklist progress. */
+  task_checklist_items?: { done: boolean }[]
 }
 
 /** task_id waits for depends_on_id: it stays Blocked until depends_on_id is Done. */
@@ -106,5 +108,14 @@ export interface TaskAttachment {
   size_bytes: number
   mime_type: string | null
   uploaded_by: string | null
+  created_at: string
+}
+
+export interface ChecklistItem {
+  id: string
+  task_id: string
+  title: string
+  done: boolean
+  position: number
   created_at: string
 }

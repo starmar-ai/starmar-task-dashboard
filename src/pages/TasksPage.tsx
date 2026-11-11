@@ -8,7 +8,7 @@ import { useLookups } from '../lib/useTeam'
 import { daysBetween, formatDate, todayIn } from '../lib/dates'
 import { canReview, indexDependencies } from '../lib/taskFlow'
 import type { Task, TaskDependency, TaskStatus } from '../lib/types'
-import { LabelTag, PriorityChip, ProjectName, STATUS_GLYPH } from '../components/Chips'
+import { ChecklistBadge, LabelTag, PriorityChip, ProjectName, STATUS_GLYPH } from '../components/Chips'
 import { EmptyState, ErrorState, LoadingState } from '../components/States'
 import { TaskBoard } from '../components/TaskBoard'
 import { Gantt, type GanttEdge, type GanttRow } from '../components/Gantt'
@@ -42,7 +42,7 @@ export function TasksPage() {
   const load = useCallback(async () => {
     setLoadError(null)
     const [taskRes, depRes] = await Promise.all([
-      supabase.from('tasks').select('*, task_labels(label_id)').order('deadline').order('created_at'),
+      supabase.from('tasks').select('*, task_labels(label_id), task_checklist_items(done)').order('deadline').order('created_at'),
       supabase.from('task_dependencies').select('task_id, depends_on_id'),
     ])
     const error = taskRes.error || depRes.error
@@ -274,6 +274,7 @@ export function TasksPage() {
                           })}
                         </span>
                       )}
+                      <ChecklistBadge items={task.task_checklist_items} />
                       {task.status === 'blocked' && <span className="small row-note">{t('tasks.waitingFor', { titles: waiting.join(', ') || '?' })}</span>}
                       {task.review_note && task.status === 'in_progress' && (
                         <button type="button" className="chip chip-note" onClick={() => setEditing(task)}>

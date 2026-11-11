@@ -4,7 +4,7 @@ import { byDeadlineThenPriority } from '../lib/dashboard'
 import { daysBetween, formatDate } from '../lib/dates'
 import { BOARD_COLUMNS, boardColumn, canEdit, canReview, planMove } from '../lib/taskFlow'
 import type { Profile, Project, Task, TaskStatus } from '../lib/types'
-import { Avatar, PriorityChip, ProjectName, StatusChip } from './Chips'
+import { Avatar, ChecklistBadge, PriorityChip, ProjectName, StatusChip } from './Chips'
 import { ReviewButtons, type useTaskMover } from './TaskMover'
 import { TaskStatusControl } from './TaskStatusControl'
 
@@ -169,6 +169,7 @@ function BoardCard({
         {late === 0 && <span className="chip chip-today">{t('tasks.dueToday')}</span>}
         <PriorityChip priority={task.priority} />
       </div>
+      <ChecklistBadge items={task.task_checklist_items} />
       {task.status === 'blocked' && (
         <p className="board-card-wait">
           <StatusChip status="blocked" />
