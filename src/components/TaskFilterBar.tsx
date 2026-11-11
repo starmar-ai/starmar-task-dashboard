@@ -29,6 +29,7 @@ export function TaskFilterBar({ filter, onChange, onApply, onReset, people, labe
   const { t } = useI18n()
   const count = activeCount(filter)
   const [open, setOpen] = useState(count > 0)
+  const [sortOpen, setSortOpen] = useState(false)
 
   function applyPreset(key: (typeof PRESETS)[number]['key']) {
     const preset = PRESETS.find((p) => p.key === key)!
@@ -60,16 +61,38 @@ export function TaskFilterBar({ filter, onChange, onApply, onReset, people, labe
     <section className="filter-bar" aria-label={t('filter.region')}>
       <div className="filter-main">
         <div className="field filter-search">
-          <label htmlFor="filter-q">{t('filter.search')}</label>
+          <label htmlFor="filter-q" className="sr-only">
+            {t('filter.search')}
+          </label>
           <input
             id="filter-q"
             type="search"
             value={filter.q}
-            placeholder={t('filter.searchPlaceholder')}
+            placeholder={`${t('filter.search')}: ${t('filter.searchPlaceholder').toLowerCase()}`}
             onChange={(e) => onChange({ q: e.target.value })}
           />
         </div>
-        <div className="field filter-sort">
+        <div className="filter-tools">
+          <button type="button" className="tool-btn" aria-label={t('filter.sortOpen')} title={t('filter.sortOpen')} aria-expanded={sortOpen} aria-controls="filter-sort-panel" onClick={() => setSortOpen((v) => !v)}>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 5v14M4.5 15.5L8 19l3.5-3.5M16 19V5M12.5 8.5L16 5l3.5 3.5" />
+            </svg>
+          </button>
+          <button type="button" className="tool-btn" aria-label={count > 0 ? t('filter.moreCount', { n: count }) : t('filter.filterOpen')} title={t('filter.filterOpen')} aria-expanded={open} aria-controls="filter-advanced" onClick={() => setOpen((v) => !v)}>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
+            {count > 0 && (
+              <span className="tool-count" aria-hidden="true">
+                {count}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {sortOpen && (
+        <div id="filter-sort-panel" className="field filter-sort-panel">
           <label htmlFor="filter-sort">{t('filter.sort')}</label>
           <select id="filter-sort" value={filter.sort} onChange={(e) => onChange({ sort: e.target.value as TaskFilter['sort'] })}>
             {SORTS.map((s) => (
@@ -79,7 +102,7 @@ export function TaskFilterBar({ filter, onChange, onApply, onReset, people, labe
             ))}
           </select>
         </div>
-      </div>
+      )}
 
       <div className="chip-row filter-presets" role="group" aria-label={t('filter.presets')}>
         {PRESETS.map((preset) => {
@@ -90,11 +113,11 @@ export function TaskFilterBar({ filter, onChange, onApply, onReset, people, labe
             </button>
           )
         })}
-        <button type="button" className="pill-btn" aria-expanded={open} aria-controls="filter-advanced" onClick={() => setOpen((v) => !v)}>
+        <button type="button" className="text-link" aria-expanded={open} aria-controls="filter-advanced" onClick={() => setOpen((v) => !v)}>
           {count > 0 ? t('filter.moreCount', { n: count }) : t('filter.more')}
         </button>
         {isFiltered(filter) && (
-          <button type="button" className="btn btn-ghost btn-sm" onClick={onReset}>
+          <button type="button" className="text-link" onClick={onReset}>
             {t('filter.reset')}
           </button>
         )}
@@ -197,15 +220,14 @@ function SavedFilters({ filter, onApply }: { filter: TaskFilter; onApply: (query
 
   return (
     <div className="saved-filters">
-      <h2 className="saved-title">{t('saved.title')}</h2>
       {tableMissing ? (
         <p className="muted small">{t('saved.setup')}</p>
       ) : (
         <>
-          {saved.filters.length === 0 ? (
-            <p className="muted small">{t('saved.none')}</p>
-          ) : (
-            <ul className="saved-list">
+          {saved.filters.length > 0 && (
+            <>
+              <h2 className="saved-title">{t('saved.title')}</h2>
+              <ul className="saved-list">
               {saved.filters.map((f) => (
                 <li key={f.id} className={`saved-item ${activeSaved?.id === f.id ? 'is-on' : ''}`}>
                   <button type="button" className="saved-apply" aria-pressed={activeSaved?.id === f.id} onClick={() => onApply(f.query)}>
@@ -219,7 +241,8 @@ function SavedFilters({ filter, onApply }: { filter: TaskFilter; onApply: (query
                   </button>
                 </li>
               ))}
-            </ul>
+              </ul>
+            </>
           )}
           {isFiltered(filter) && !activeSaved && (
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setNaming(true)}>

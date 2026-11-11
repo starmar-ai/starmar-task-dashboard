@@ -13,6 +13,9 @@ interface Props {
 export function Modal({ title, onClose, children, footer, size = 'md' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const { t } = useI18n()
+  // A drag that starts inside (selecting text) and ends on the backdrop also fires a click on the dialog.
+  // Only a press that began on the backdrop counts as "click outside".
+  const pressedBackdrop = useRef(false)
 
   useEffect(() => {
     const el = ref.current
@@ -29,8 +32,13 @@ export function Modal({ title, onClose, children, footer, size = 'md' }: Props) 
         e.preventDefault()
         onClose()
       }}
+      onMouseDown={(e) => {
+        pressedBackdrop.current = e.target === ref.current
+      }}
       onClick={(e) => {
-        if (e.target === ref.current) onClose()
+        const started = pressedBackdrop.current
+        pressedBackdrop.current = false
+        if (e.target === ref.current && started) onClose()
       }}
     >
       <div className="modal-inner">

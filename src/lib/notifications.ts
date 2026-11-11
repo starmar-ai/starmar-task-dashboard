@@ -64,7 +64,11 @@ export function useUnreadCount(userId: string | undefined, routeKey: string): nu
   const [count, setCount] = useState(0)
   const load = useCallback(async () => {
     if (!userId) return
-    const { count: n, error } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null)
+    // Inner join on the task: news about a trashed or deleted task is not listed, so it must not be counted either.
+    const { count: n, error } = await supabase
+      .from('notifications')
+      .select('id, task:tasks!task_id!inner(id)', { count: 'exact', head: true })
+      .is('read_at', null)
     if (!error) setCount(n ?? 0)
   }, [userId])
 
