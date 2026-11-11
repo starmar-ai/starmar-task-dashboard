@@ -11,16 +11,6 @@ type Hit = Pick<Task, 'id' | 'title' | 'status' | 'deadline'>
 
 const MAX_HITS = 8
 
-/** True when the key press should open quick search: "/" or Ctrl/Cmd+K, but never while typing in a field. */
-export function isSearchShortcut(e: globalThis.KeyboardEvent): boolean {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') return true
-  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return false
-  const el = e.target as HTMLElement | null
-  if (!el) return true
-  const tag = el.tagName
-  return !(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable)
-}
-
 export function QuickSearch({ onClose }: { onClose: () => void }) {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
