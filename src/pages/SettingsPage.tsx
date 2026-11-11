@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
@@ -11,6 +12,13 @@ import { NotificationSettingsCard } from '../components/NotificationSettings'
 import { openShortcutHelp } from '../lib/shortcuts'
 
 export function SettingsPage() {
+  const { hash } = useLocation()
+  // Links like /settings#s-labels land on that card (the router does not scroll to anchors by itself).
+  useEffect(() => {
+    if (!hash) return
+    const id = window.setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' }), 50)
+    return () => window.clearTimeout(id)
+  }, [hash])
   const { t } = useI18n()
   const { profile, updateProfile } = useAuth()
   const lookups = useLookups()

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
@@ -57,6 +58,8 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   const [confirmDates, setConfirmDates] = useState(false)
   const [confirmDone, setConfirmDone] = useState(false)
   const [asking, setAsking] = useState(false)
+  const [leaving, setLeaving] = useState<{ after?: () => void } | null>(null)
+  const navigate = useNavigate()
   const [requestsKey, setRequestsKey] = useState(0)
 
   const mover = useTaskMover(() => {
@@ -69,6 +72,28 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   const doneLocked = needsReviewer(profile, { reviewer_id: reviewerId || null }) && live.status !== 'done'
   const creator = lookups.people.find((p) => p.id === task.created_by)
   const projects = lookups.projects.filter((p) => !p.archived || p.id === task.project_id)
+
+  const sameLabels = labelIds.length === task.task_labels.length && labelIds.every((id) => task.task_labels.some((l) => l.label_id === id))
+  const dirty =
+    editable &&
+    (title !== task.title ||
+      projectId !== task.project_id ||
+      deadline !== task.deadline ||
+      startDate !== (task.start_date ?? '') ||
+      status !== live.status ||
+      priority !== task.priority ||
+      assigneeId !== (task.assignee_id ?? '') ||
+      reviewerId !== (task.reviewer_id ?? '') ||
+      description !== (task.description ?? '') ||
+      !sameLabels ||
+      newLabel.trim() !== '')
+
+  /** Close the window; when something was changed, ask first (save, discard, or keep editing). */
+  function requestClose(after?: () => void) {
+    if (dirty) return setLeaving({ after })
+    onClose()
+    after?.()
+  }
 
   async function addLabel() {
     const name = newLabel.trim()
@@ -197,7 +222,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
     <>
       <Modal
         title={isNew ? t('taskForm.newTitle') : t('taskForm.editTitle')}
-        onClose={onClose}
+        onClose={() => requestClose()}
         footer={
           editable ? (
             <>
@@ -207,7 +232,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
                 </button>
               )}
               <span className="spacer" />
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
+              <button type="button" className="btn btn-secondary" onClick={() => requestClose()}>
                 {t('common.cancel')}
               </button>
               <button type="submit" form="task-form" className="btn btn-primary" disabled={busy}>
@@ -300,7 +325,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
               ) : (
                 <>
                   <label htmlFor="tf-status">{t('taskForm.status')}</label>
-                  <select id="tf-status" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
+                  <select id="tf-status" className={`chip-select chip-status-${status}`} value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
                     {(['todo', 'in_progress', 'review', 'done'] as TaskStatus[]).map((s) => (
                       <option key={s} value={s} disabled={s === 'done' && doneLocked}>
                         {s === 'done' && doneLocked ? t('tasks.doneViaReviewer') : t(`status.${s}`)}
@@ -313,7 +338,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
             )}
             <div className="field">
               <label htmlFor="tf-priority">{t('taskForm.priority')}</label>
-              <select id="tf-priority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+              <select id="tf-priority" className={`chip-select chip-priority-${priority}`} value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
                 {PRIORITIES.map((p) => (
                   <option key={p} value={p}>
                     {t(`priority.${p}`)}
@@ -370,9 +395,14 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
               <textarea id="tf-desc" rows={4} maxLength={5000} value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
             <div className="field span-2">
-              <span className="field-label" id="tf-labels-label">
-                {t('taskForm.labels')}
-              </span>
+              <div className="field-label-row">
+                <span className="field-label" id="tf-labels-label">
+                  {t('taskForm.labels')}
+                </span>
+                <button type="button" className="link-btn" onClick={() => requestClose(() => navigate('/settings#s-labels'))}>
+                  {t('taskForm.editLabels')}
+                </button>
+              </div>
               <div className="label-picker" role="group" aria-labelledby="tf-labels-label">
                 {lookups.labels.map((l) => {
                   const on = labelIds.includes(l.id)
@@ -495,6 +525,45 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
             setRequestsKey((k) => k + 1)
           }}
         />
+      )}
+      {leaving && (
+        <Modal
+          title={t('taskForm.unsavedTitle')}
+          size="sm"
+          onClose={() => setLeaving(null)}
+          footer={
+            <>
+              <button type="button" className="btn btn-ghost" onClick={() => setLeaving(null)}>
+                {t('taskForm.keepEditing')}
+              </button>
+              <span className="spacer" />
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  const after = leaving.after
+                  setLeaving(null)
+                  onClose()
+                  after?.()
+                }}
+              >
+                {t('taskForm.discard')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setLeaving(null)
+                  ;(document.getElementById('task-form') as HTMLFormElement | null)?.requestSubmit()
+                }}
+              >
+                {t('common.save')}
+              </button>
+            </>
+          }
+        >
+          <p>{t('taskForm.unsavedBody')}</p>
+        </Modal>
       )}
       {mover.dialog}
     </>
