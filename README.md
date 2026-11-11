@@ -61,6 +61,10 @@ Bel di aplikasi langsung jalan setelah SQL di langkah 3. Email butuh akun Resend
 
 Cara kerjanya: trigger database menulis notifikasi saat ada kejadian (ditugaskan, review, komentar, permintaan perubahan, tidak terblokir lagi). Job tiap jam menulis notifikasi deadline (besok, hari ini, lewat deadline, tugas tim telat lebih dari sehari untuk admin, permintaan perubahan 2 hari kerja belum dijawab) mulai jam 08:00 zona waktu masing-masing, Senin sampai Jumat. Job yang sama memanggil `api/notify.ts` untuk kirim ringkasan email harian jam 08:00, dan email langsung hanya untuk tugas berprioritas Urgent. Semua jalan di server, jadi laptop boleh mati.
 
+### Kalau Vercel berhenti ngebuild commit baru
+
+Cek GitHub > Settings > Applications > Vercel > Configure > Repository access. Repo `starmar-task-dashboard` harus ada di daftar (atau pilih All repositories). Lalu Vercel > project > Settings > Git > Reconnect.
+
 ## Struktur
 
 | Folder / file | Isi |
