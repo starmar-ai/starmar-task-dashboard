@@ -239,13 +239,6 @@ export function AppShell() {
           </ul>
         </nav>
 
-        <div className="sidebar-search-wrap">
-          <button type="button" className="btn btn-secondary btn-sm sidebar-search" onClick={() => setSearching(true)}>
-            {t('qs.open')}
-            <kbd className="kbd">/</kbd>
-          </button>
-        </div>
-
         <div className="sidebar-foot">
           {profile && (
             <div className="me">
