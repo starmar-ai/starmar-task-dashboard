@@ -310,7 +310,7 @@ export function TasksPage() {
                 return (
                   <tr key={task.id} className={late > 0 ? 'is-overdue' : ''}>
                     <td data-label={t('tasks.col.task')} className="cell-title">
-                      <button type="button" className="link-btn" onClick={() => setEditing(task)} aria-label={t('tasks.openTask', { title: task.title })}>
+                      <button type="button" className="link-btn task-title-btn" onClick={() => setEditing(task)} aria-label={t('tasks.openTask', { title: task.title })}>
                         {task.title}
                       </button>
                       {task.task_labels.length > 0 && (

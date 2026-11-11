@@ -8,9 +8,8 @@ import type { Task } from '../lib/types'
 import { TaskForm } from '../pages/TaskForm'
 
 /** Floating "Tambah Tugas" button on every page. It opens a small panel at the bottom center, and "Show details" opens the full form. */
-export function QuickAddTask() {
+export function QuickAddTask({ open, setOpen }: { open: boolean; setOpen: (v: boolean) => void }) {
   const { t } = useI18n()
-  const [open, setOpen] = useState(false)
   return (
     <>
       {!open && (

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../lib/i18n'
 import { Avatar } from './Chips'
 import { QuickAddTask } from './QuickAddTask'
-import { QuickSearch, isSearchShortcut } from './QuickSearch'
+import { QuickSearch } from './QuickSearch'
+import { ShortcutHelp } from './ShortcutHelp'
+import { GO_TIMEOUT_MS, HELP_EVENT, isTypingTarget, shortcutFor } from '../lib/shortcuts'
 import { supabase } from '../lib/supabase'
 import { useRequestsChanged } from '../lib/requestEvents'
 import { purgeExpired } from '../lib/trash'
@@ -84,7 +86,12 @@ export function AppShell() {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [searching, setSearching] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [helping, setHelping] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const menuButton = useRef<HTMLButtonElement>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
 
   useEffect(() => setOpen(false), [location.pathname, location.search])
 
@@ -114,24 +121,49 @@ export function AppShell() {
     if (timezone) purgeExpired(todayIn(timezone))
   }, [timezone])
 
+  // Drawer on phones: focus moves into it on open and back to the Menu button on close.
+  const wasOpen = useRef(false)
   useEffect(() => {
+    if (open) sidebarRef.current?.querySelector<HTMLElement>('.nav-link')?.focus()
+    else if (wasOpen.current) menuButton.current?.focus()
+    wasOpen.current = open
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
+  const isDark = profile?.theme === 'dark'
+  const toggleTheme = useCallback(() => updateProfile({ theme: isDark ? 'light' : 'dark' }), [isDark, updateProfile])
+
   useEffect(() => {
+    const onHelp = () => setHelping(true)
+    window.addEventListener(HELP_EVENT, onHelp)
+    return () => window.removeEventListener(HELP_EVENT, onHelp)
+  }, [])
+
+  useEffect(() => {
+    let goUntil = 0
     const onKey = (e: KeyboardEvent) => {
-      if (!isSearchShortcut(e)) return
+      const action = shortcutFor(e, {
+        typing: isTypingTarget(e.target),
+        overlayOpen: Boolean(document.querySelector('dialog[open], .quick-pop')) || open,
+        awaitingGo: Date.now() < goUntil,
+      })
+      goUntil = 0
+      if (!action) return
       e.preventDefault()
-      setSearching(true)
+      if (action.kind === 'startGo') goUntil = Date.now() + GO_TIMEOUT_MS
+      else if (action.kind === 'go') navigate(action.path)
+      else if (action.kind === 'search') setSearching(true)
+      else if (action.kind === 'newTask') setAdding(true)
+      else if (action.kind === 'help') setHelping(true)
+      else if (action.kind === 'toggleTheme') toggleTheme()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [navigate, open, toggleTheme])
 
-  const isDark = profile?.theme === 'dark'
 
   return (
     <div className="shell">
@@ -150,6 +182,7 @@ export function AppShell() {
           className="btn btn-secondary btn-sm"
           aria-expanded={open}
           aria-controls="sidebar"
+          ref={menuButton}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? t('nav.close') : t('nav.menu')}
@@ -158,9 +191,14 @@ export function AppShell() {
 
       {open && <div className="scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
 
-      <aside id="sidebar" className={`sidebar ${open ? 'is-open' : ''}`}>
+      <aside id="sidebar" ref={sidebarRef} className={`sidebar ${open ? 'is-open' : ''}`}>
         <div className="sidebar-brand">
           <span className="wordmark">{t('app.name')}</span>
+          <button type="button" className="icon-btn sidebar-close" onClick={() => setOpen(false)} aria-label={t('nav.close')}>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
         <nav aria-label={t('nav.main')}>
           <ul className="nav-list">
@@ -253,7 +291,7 @@ export function AppShell() {
             <button
               type="button"
               className="btn btn-secondary btn-sm"
-              onClick={() => updateProfile({ theme: isDark ? 'light' : 'dark' })}
+              onClick={toggleTheme}
             >
               {isDark ? t('theme.toLight') : t('theme.toDark')}
             </button>
@@ -267,8 +305,9 @@ export function AppShell() {
       <main className="main" id="main">
         <Outlet />
       </main>
-      <QuickAddTask />
+      <QuickAddTask open={adding} setOpen={setAdding} />
       {searching && <QuickSearch onClose={() => setSearching(false)} />}
+      {helping && <ShortcutHelp onClose={() => setHelping(false)} />}
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../components/Modal'
 import { ErrorState, LoadingState } from '../components/States'
 import { LabelTag } from '../components/Chips'
 import { NotificationSettingsCard } from '../components/NotificationSettings'
+import { openShortcutHelp } from '../lib/shortcuts'
 
 export function SettingsPage() {
   const { t } = useI18n()
@@ -129,6 +130,14 @@ export function SettingsPage() {
       </section>
 
       <NotificationSettingsCard />
+
+      <section className="card settings-shortcuts" aria-labelledby="s-shortcuts">
+        <h2 id="s-shortcuts">{t('settings.shortcuts')}</h2>
+        <p className="muted small">{t('settings.shortcutsHint')}</p>
+        <button type="button" className="btn btn-secondary" onClick={openShortcutHelp}>
+          {t('settings.shortcutsOpen')}
+        </button>
+      </section>
 
       <section className="card" aria-labelledby="s-labels">
         <h2 id="s-labels">{t('settings.labels')}</h2>
