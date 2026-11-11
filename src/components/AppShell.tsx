@@ -268,24 +268,21 @@ export function AppShell() {
                 {t('nav.trash')}
               </NavLink>
             </li>
-            <li>
-              <NavLink to="/settings" className="nav-link">
-                <NavIcon name="settings" />
-                {t('nav.settings')}
-              </NavLink>
-            </li>
           </ul>
         </nav>
 
         <div className="sidebar-foot">
           {profile && (
-            <div className="me">
+            <NavLink to="/settings" className="me" aria-label={t('nav.profileSettings', { name: profile.full_name || profile.email })}>
               <Avatar name={profile.full_name || profile.email} />
               <div className="me-text">
                 <span className="me-name">{profile.full_name || profile.email}</span>
                 <span className="me-role">{t(`role.${profile.role}`)}</span>
               </div>
-            </div>
+              <span className="me-gear">
+                <NavIcon name="settings" />
+              </span>
+            </NavLink>
           )}
           <div className="sidebar-actions">
             <button

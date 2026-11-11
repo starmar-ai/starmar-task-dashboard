@@ -41,10 +41,10 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #1a1944; /* panel utama: paling gelap */
-  --surface: #252462; /* kartu: satu tingkat di atas panel */
-  --surface-2: #2e2d74; /* input dan area dalam kartu: satu tingkat di atas kartu */
-  --sidebar: #2b2a6b; /* sidebar: lebih terang dari panel supaya terbaca sebagai area sendiri */
+  --bg: #0b0a1c; /* panel utama: hampir hitam, tetap condong indigo */
+  --surface: #1a1944; /* kartu, tab, sidebar: warna panel gelap versi sebelumnya */
+  --surface-2: #252462; /* input dan area dalam kartu: satu tingkat di atas kartu */
+  --sidebar: #1a1944; /* sidebar: sama dengan kartu, dipisah dari panel oleh outline lavender */
   --text: var(--cream);
   --muted: #c9c7ea;
   --line: var(--lavender);
@@ -637,6 +637,33 @@ input[type='radio'] {
   align-items: center;
   gap: 0.6rem;
   min-width: 0;
+  min-height: 48px;
+  padding: 0.35rem 0.6rem 0.35rem 0.35rem;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform var(--speed) ease,
+    box-shadow var(--speed) ease;
+}
+
+.me:hover {
+  border-color: var(--lavender);
+}
+
+.me.active {
+  border-color: var(--lavender);
+  box-shadow: 3px 3px 0 var(--lavender);
+}
+
+.me-text {
+  flex: 1;
+}
+
+.me-gear {
+  flex: none;
+  color: var(--muted);
 }
 
 .me-text {
@@ -3882,9 +3909,100 @@ button.check-title {
   text-underline-offset: 3px;
 }
 
+/* Search first; sort and filter stay folded until asked for. */
+.filter-main {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.filter-tools {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tool-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform var(--speed) ease,
+    box-shadow var(--speed) ease;
+}
+
+.tool-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.tool-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.tool-btn[aria-expanded='true'] {
+  background: var(--yellow);
+  color: var(--indigo);
+  box-shadow: var(--shadow-sm);
+}
+
+.tool-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--coral);
+  color: var(--indigo);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+
+.text-link {
+  min-height: 44px;
+  padding: 0 0.4rem;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.filter-sort-panel {
+  max-width: 260px;
+}
+
+.saved-filters {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.saved-filters:empty {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .filter-main {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 }
 
