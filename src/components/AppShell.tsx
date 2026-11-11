@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../lib/i18n'
 import { Avatar } from './Chips'
 import { QuickAddTask } from './QuickAddTask'
+import { QuickSearch, isSearchShortcut } from './QuickSearch'
 import { supabase } from '../lib/supabase'
 import { useRequestsChanged } from '../lib/requestEvents'
 import { purgeExpired } from '../lib/trash'
@@ -82,6 +83,7 @@ export function AppShell() {
   const { profile, signOut, updateProfile } = useAuth()
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
+  const [searching, setSearching] = useState(false)
   const location = useLocation()
 
   useEffect(() => setOpen(false), [location.pathname, location.search])
@@ -118,6 +120,16 @@ export function AppShell() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!isSearchShortcut(e)) return
+      e.preventDefault()
+      setSearching(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const isDark = profile?.theme === 'dark'
 
@@ -227,6 +239,13 @@ export function AppShell() {
           </ul>
         </nav>
 
+        <div className="sidebar-search-wrap">
+          <button type="button" className="btn btn-secondary btn-sm sidebar-search" onClick={() => setSearching(true)}>
+            {t('qs.open')}
+            <kbd className="kbd">/</kbd>
+          </button>
+        </div>
+
         <div className="sidebar-foot">
           {profile && (
             <div className="me">
@@ -256,6 +275,7 @@ export function AppShell() {
         <Outlet />
       </main>
       <QuickAddTask />
+      {searching && <QuickSearch onClose={() => setSearching(false)} />}
     </div>
   )
 }

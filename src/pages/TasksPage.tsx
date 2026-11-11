@@ -16,6 +16,8 @@ import { useDateChange } from '../components/TaskDateChange'
 import { canEditTask } from '../lib/permissions'
 import { ReviewButtons, useTaskMover } from '../components/TaskMover'
 import { TaskStatusControl } from '../components/TaskStatusControl'
+import { TaskFilterBar } from '../components/TaskFilterBar'
+import { compareTasks, filterToQuery, isFiltered, matchesFilter, parseFilter, type TaskFilter } from '../lib/taskFilters'
 import { TaskForm } from './TaskForm'
 
 type View = 'table' | 'board' | 'gantt'
@@ -26,9 +28,9 @@ export function TasksPage() {
   const { profile } = useAuth()
   const lookups = useLookups()
   const [params, setParams] = useSearchParams()
-  const projectFilter = params.get('project') ?? ''
+  const filter = useMemo(() => parseFilter(params), [params])
+  const projectFilter = filter.project
   const view: View = params.get('view') === 'board' ? 'board' : params.get('view') === 'gantt' ? 'gantt' : 'table'
-  const [showDone, setShowDone] = useState(false)
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [deps, setDeps] = useState<TaskDependency[]>([])
@@ -89,11 +91,45 @@ export function TasksPage() {
     )
   }
 
-  const inScope = tasks.filter((task) => {
-    if (projectFilter) return task.project_id === projectFilter
-    return !projectById.get(task.project_id)?.archived
-  })
+  /** Write a filter to the URL (so it can be shared and survives a refresh); the chosen view stays. */
+  function writeFilter(next: TaskFilter) {
+    const nextParams = new URLSearchParams(filterToQuery(next))
+    const viewParam = params.get('view')
+    if (viewParam) nextParams.set('view', viewParam)
+    setParams(nextParams, { replace: true })
+  }
+
+  const filterCtx = useMemo(() => ({ meId: profile?.id, today }), [profile?.id, today])
+  const inScope = useMemo(
+    () =>
+      tasks
+        .filter((task) => {
+          if (!projectFilter && projectById.get(task.project_id)?.archived) return false
+          return matchesFilter(task, filter, filterCtx)
+        })
+        .sort(compareTasks(filter.sort)),
+    [tasks, filter, filterCtx, projectFilter, projectById],
+  )
+  const filtered = isFiltered(filter)
+  const showDone = filter.done || filter.status === 'done'
   const visible = inScope.filter((task) => showDone || task.status !== 'done')
+
+  // Quick search sends people here with ?open=<task id>.
+  const openId = params.get('open')
+  useEffect(() => {
+    if (!openId) return
+    const task = taskById.get(openId)
+    if (!task) return
+    setEditing(task)
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('open')
+        return next
+      },
+      { replace: true },
+    )
+  }, [openId, taskById, setParams])
   const currentProject = projectFilter ? projectById.get(projectFilter) : undefined
   const shownCount = view === 'table' ? visible.length : inScope.length
 
@@ -161,7 +197,7 @@ export function TasksPage() {
           </fieldset>
           <div className="field field-inline">
             <label htmlFor="filter-project">{t('tasks.filterProject')}</label>
-            <select id="filter-project" value={projectFilter} onChange={(e) => setParam('project', e.target.value)}>
+            <select id="filter-project" value={projectFilter} onChange={(e) => writeFilter({ ...filter, project: e.target.value })}>
               <option value="">{t('tasks.allProjects')}</option>
               {lookups.projects.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -173,12 +209,23 @@ export function TasksPage() {
           </div>
           {view === 'table' && (
             <label className="check">
-              <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
+              <input type="checkbox" checked={showDone} disabled={filter.status === 'done'} onChange={(e) => writeFilter({ ...filter, done: e.target.checked })} />
               {t('tasks.showDone')}
             </label>
           )}
         </div>
       </header>
+
+      {!noProjects && (
+        <TaskFilterBar
+          filter={filter}
+          people={lookups.people}
+          labels={lookups.labels}
+          onChange={(patch) => writeFilter({ ...filter, ...patch })}
+          onApply={(query) => writeFilter(parseFilter(new URLSearchParams(query)))}
+          onReset={() => writeFilter({ ...parseFilter(new URLSearchParams()), sort: 'deadline' })}
+        />
+      )}
 
       {noProjects ? (
         <EmptyState
@@ -212,7 +259,7 @@ export function TasksPage() {
           }}
         />
       ) : noProjects ? null : inScope.length === 0 ? (
-        <EmptyState>{t('tasks.empty')}</EmptyState>
+        <EmptyState>{filtered ? t('tasks.noMatch') : t('tasks.empty')}</EmptyState>
       ) : view === 'gantt' ? (
         <Gantt
           rows={ganttRows}
