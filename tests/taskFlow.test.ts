@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { boardColumn, canReview, needsReviewer, planMove, wouldCreateCycle } from '../src/lib/taskFlow.ts'
+import { boardColumn, canEdit, canReopen, canReview, needsReviewer, planMove, wouldCreateCycle } from '../src/lib/taskFlow.ts'
 
 const admin = { id: 'fadli', role: 'admin' as const }
 const owner = { id: 'alfa', role: 'member' as const }
@@ -59,4 +59,15 @@ test('dependency loops are detected, direct and further down', () => {
   assert.equal(wouldCreateCycle(deps, 'A', 'A'), true)
   assert.equal(wouldCreateCycle(deps, 'C', 'A'), false)
   assert.equal(wouldCreateCycle(deps, 'D', 'C'), false)
+})
+
+test('tasks of an archived project are read-only, a Done one can be reopened by its owner', () => {
+  const me = { id: 'u1', role: 'member' as const }
+  const mine = { assignee_id: 'u1', created_by: 'u9', status: 'done' as const }
+  assert.equal(canEdit(me, mine), true)
+  assert.equal(canEdit(me, { ...mine, project_archived: true }), false)
+  assert.equal(canReopen(me, { ...mine, project_archived: true }), true)
+  assert.equal(canReopen(me, { ...mine, project_archived: false }), false)
+  assert.equal(canReopen(me, { ...mine, assignee_id: 'u2', project_archived: true }), false)
+  assert.equal(canReopen({ id: 'a', role: 'admin' }, { ...mine, assignee_id: 'u2', project_archived: true }), true)
 })

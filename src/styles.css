@@ -4367,6 +4367,21 @@ input[type='radio'] {
   text-underline-offset: 3px;
 }
 
+/* Notice above the task list of an archived project: tasks are view-only, with a way back. */
+.archive-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
 /* Ubah Tugas: info utama + bagian (tab di desktop, kartu lipat di HP) ------- */
 
 .tf-layout,

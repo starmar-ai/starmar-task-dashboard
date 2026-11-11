@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useI18n } from '../lib/i18n'
+import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
 import { useLookups } from '../lib/useTeam'
 import { formatDate, todayIn } from '../lib/dates'
@@ -18,12 +18,14 @@ export function ProjectsPage() {
   const isAdmin = profile?.role === 'admin'
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
-  const view = params.get('view') === 'timeline' ? 'timeline' : 'table'
+  const tab = params.get('tab') === 'arsip' ? 'arsip' : 'aktif'
+  const view = tab === 'aktif' && params.get('view') === 'timeline' ? 'timeline' : 'table'
 
   const [rows, setRows] = useState<ProjectOverview[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [showArchived, setShowArchived] = useState(false)
+  const [restoring, setRestoring] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [editing, setEditing] = useState<ProjectOverview | 'new' | null>(params.get('new') === '1' ? 'new' : null)
 
   const load = useCallback(async () => {
@@ -39,8 +41,8 @@ export function ProjectsPage() {
   }, [load])
 
   const personById = useMemo(() => new Map(lookups.people.map((p) => [p.id, p])), [lookups.people])
-  const visible = rows.filter((r) => showArchived || !r.archived)
   const archivedCount = rows.filter((r) => r.archived).length
+  const visible = rows.filter((r) => (tab === 'arsip' ? r.archived : !r.archived))
 
   const today = todayIn(profile?.timezone ?? 'Asia/Jakarta')
   const timelineRows = useMemo<GanttRow[]>(
@@ -70,6 +72,28 @@ export function ProjectsPage() {
   )
   const withoutTasks = visible.length - timelineRows.length
 
+  function setTab(next: 'aktif' | 'arsip') {
+    setParams(
+      (prev) => {
+        const q = new URLSearchParams(prev)
+        if (next === 'arsip') q.set('tab', next)
+        else q.delete('tab')
+        return q
+      },
+      { replace: true },
+    )
+  }
+
+  async function restore(project: ProjectOverview) {
+    setActionError(null)
+    setRestoring(project.id)
+    const { error } = await supabase.from('projects').update({ archived: false, status: 'aktif' }).eq('id', project.id)
+    setRestoring(null)
+    if (error) return setActionError(errorMessage(t, error))
+    await load()
+    lookups.reload()
+  }
+
   function closeForm() {
     setEditing(null)
     if (params.get('new')) setParams({})
@@ -82,6 +106,16 @@ export function ProjectsPage() {
           <h1>{t('projects.title')}</h1>
         </div>
         <div className="filters">
+          <fieldset className="segmented segmented-sm view-switch">
+            <legend className="sr-only">{t('projects.tabs')}</legend>
+            {(['aktif', 'arsip'] as const).map((v) => (
+              <label key={v} className={tab === v ? 'is-on' : ''}>
+                <input type="radio" name="project-tab" checked={tab === v} onChange={() => setTab(v)} />
+                {v === 'arsip' ? `${t('projects.tab.archive')} (${archivedCount})` : t('projects.tab.active')}
+              </label>
+            ))}
+          </fieldset>
+          {tab === 'aktif' && (
           <fieldset className="segmented segmented-sm view-switch">
             <legend className="sr-only">{t('view.label')}</legend>
             {(['table', 'timeline'] as const).map((v) => (
@@ -106,13 +140,8 @@ export function ProjectsPage() {
               </label>
             ))}
           </fieldset>
-          {archivedCount > 0 && (
-            <label className="check">
-              <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-              {t('projects.showArchived')} ({archivedCount})
-            </label>
           )}
-          {isAdmin && (
+          {isAdmin && tab === 'aktif' && (
             <button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>
               {t('projects.new')}
             </button>
@@ -120,10 +149,29 @@ export function ProjectsPage() {
         </div>
       </header>
 
+      {tab === 'arsip' && !loading && !loadError && <p className="muted small">{t('projects.archiveHint')}</p>}
+      {actionError && (
+        <p className="form-error" role="alert">
+          {actionError}
+        </p>
+      )}
+
       {loading ? (
         <LoadingState />
       ) : loadError ? (
         <ErrorState message={t('projects.loadError')} detail={loadError} onRetry={load} />
+      ) : visible.length === 0 && tab === 'arsip' ? (
+        <EmptyState>{t('projects.archiveEmpty')}</EmptyState>
+      ) : visible.length === 0 && archivedCount > 0 ? (
+        <EmptyState
+          action={
+            <button type="button" className="btn btn-secondary" onClick={() => setTab('arsip')}>
+              {t('projects.openArchive')}
+            </button>
+          }
+        >
+          {t('projects.allArchived')}
+        </EmptyState>
       ) : visible.length === 0 ? (
         <EmptyState
           action={
@@ -154,12 +202,13 @@ export function ProjectsPage() {
                 <th scope="col">{t('projects.col.project')}</th>
                 <th scope="col">{t('projects.col.status')}</th>
                 <th scope="col">{t('projects.col.progress')}</th>
-                <th scope="col">{t('projects.col.overdue')}</th>
+                {tab === 'aktif' && <th scope="col">{t('projects.col.overdue')}</th>}
+                {tab === 'arsip' && <th scope="col">{t('projects.col.finished')}</th>}
                 <th scope="col">{t('projects.col.period')}</th>
                 <th scope="col">{t('projects.col.pm')}</th>
                 {isAdmin && (
                   <th scope="col">
-                    <span className="sr-only">{t('common.edit')}</span>
+                    <span className="sr-only">{tab === 'arsip' ? t('projects.col.actions') : t('common.edit')}</span>
                   </th>
                 )}
               </tr>
@@ -180,7 +229,6 @@ export function ProjectsPage() {
                       <span className="chip-row">
                         <ProjectStatusChip status={p.status} />
                         {p.at_risk && <RiskChip />}
-                        {p.archived && <span className="chip">{t('projects.archived')}</span>}
                       </span>
                     </td>
                     <td data-label={t('projects.col.progress')}>
@@ -198,9 +246,14 @@ export function ProjectsPage() {
                         <span className="small">{t('projects.progressLabel', { done: p.task_done, total: p.task_total })}</span>
                       </div>
                     </td>
-                    <td data-label={t('projects.col.overdue')}>
-                      {p.task_overdue > 0 ? <span className="chip chip-overdue">{t('projects.overdueCount', { n: p.task_overdue })}</span> : <span className="muted">0</span>}
-                    </td>
+                    {tab === 'aktif' && (
+                      <td data-label={t('projects.col.overdue')}>
+                        {p.task_overdue > 0 ? <span className="chip chip-overdue">{t('projects.overdueCount', { n: p.task_overdue })}</span> : <span className="muted">0</span>}
+                      </td>
+                    )}
+                    {tab === 'arsip' && (
+                      <td data-label={t('projects.col.finished')}>{p.finished_at ? formatDate(new Date(p.finished_at).toLocaleDateString('en-CA', { timeZone: profile?.timezone ?? 'Asia/Jakarta' }), locale) : <span className="muted">{t('common.none')}</span>}</td>
+                    )}
                     <td data-label={t('projects.col.period')}>
                       {p.first_date && p.last_deadline ? (
                         `${formatDate(p.first_date, locale)} – ${formatDate(p.last_deadline, locale)}`
@@ -211,6 +264,11 @@ export function ProjectsPage() {
                     <td data-label={t('projects.col.pm')}>{pm ? pm.full_name || pm.email : <span className="muted">{t('common.none')}</span>}</td>
                     {isAdmin && (
                       <td className="cell-actions">
+                        {tab === 'arsip' && (
+                          <button type="button" className="btn btn-secondary btn-sm" disabled={restoring === p.id} onClick={() => restore(p)} aria-label={t('projects.restoreAria', { name: p.name })}>
+                            {restoring === p.id ? t('common.saving') : t('projects.restore')}
+                          </button>
+                        )}
                         <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditing(p)} aria-label={t('projects.edit', { name: p.name })}>
                           {t('common.edit')}
                         </button>

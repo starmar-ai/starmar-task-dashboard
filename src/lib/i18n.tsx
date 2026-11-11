@@ -461,7 +461,22 @@ const id = {
 
   'projects.title': 'Proyek',
   'projects.new': 'Proyek baru',
-  'projects.showArchived': 'Tampilkan arsip',
+  'projects.tabs': 'Daftar proyek',
+  'projects.tab.active': 'Aktif',
+  'projects.tab.archive': 'Arsip',
+  'projects.archiveHint': 'Proyek pindah ke sini sendiri saat semua tugasnya Done. Tugasnya masih bisa dilihat, tapi tidak bisa diubah.',
+  'projects.archiveEmpty': 'Belum ada proyek di Arsip. Proyek pindah ke sini sendiri begitu semua tugasnya Done.',
+  'projects.allArchived': 'Semua proyek sudah selesai dan ada di Arsip.',
+  'projects.openArchive': 'Buka Arsip',
+  'projects.col.finished': 'Selesai pada',
+  'projects.col.actions': 'Aksi',
+  'projects.restore': 'Pulihkan',
+  'projects.restoreAria': 'Pulihkan {name} ke Aktif',
+  'tasks.archivedBanner': 'Proyek ini sudah selesai dan ada di Arsip, jadi tugasnya hanya bisa dilihat. Buka lagi satu tugas Done atau pulihkan proyeknya untuk lanjut kerja.',
+  'taskForm.archivedReadOnly': 'Proyek ini ada di Arsip, jadi tugas ini hanya bisa dilihat.',
+  'taskForm.archivedReopen': 'Proyek ini ada di Arsip, jadi tugas ini hanya bisa dilihat. Buka lagi tugas ini dan proyeknya balik Aktif.',
+  'taskForm.reopen': 'Buka lagi tugas',
+  'error.projectArchived': 'Proyek ini ada di Arsip. Pulihkan proyeknya atau buka lagi satu tugas dulu.',
   'projects.col.project': 'Proyek',
   'projects.col.pm': 'PM',
   'projects.col.period': 'Periode',
@@ -1150,7 +1165,22 @@ const en: Record<Key, string> = {
 
   'projects.title': 'Projects',
   'projects.new': 'New project',
-  'projects.showArchived': 'Show archived',
+  'projects.tabs': 'Project list',
+  'projects.tab.active': 'Active',
+  'projects.tab.archive': 'Archive',
+  'projects.archiveHint': 'Projects move here on their own once all their tasks are Done. Their tasks stay visible but cannot be changed.',
+  'projects.archiveEmpty': 'Nothing in the Archive yet. A project moves here as soon as all its tasks are Done.',
+  'projects.allArchived': 'Every project is finished and sits in the Archive.',
+  'projects.openArchive': 'Open Archive',
+  'projects.col.finished': 'Finished on',
+  'projects.col.actions': 'Actions',
+  'projects.restore': 'Restore',
+  'projects.restoreAria': 'Restore {name} to Active',
+  'tasks.archivedBanner': 'This project is finished and in the Archive, so its tasks are view-only. Reopen a Done task or restore the project to keep working.',
+  'taskForm.archivedReadOnly': 'This project is in the Archive, so this task is view-only.',
+  'taskForm.archivedReopen': 'This project is in the Archive, so this task is view-only. Reopen it and the project becomes Active again.',
+  'taskForm.reopen': 'Reopen task',
+  'error.projectArchived': 'This project is in the Archive. Restore it or reopen a task first.',
   'projects.col.project': 'Project',
   'projects.col.pm': 'PM',
   'projects.col.period': 'Period',
@@ -1419,6 +1449,7 @@ export function errorMessage(t: TFn, err: { message?: string; code?: string } | 
   if (msg.includes('tasks_start_before_deadline')) return t('error.crDeadlineOrder')
   if (msg.includes('person_not_in_project')) return t('error.personNotInProject')
   if (msg.includes('reviewer_locked')) return t('error.reviewerLocked')
+  if (msg.includes('project_archived')) return t('error.projectArchived')
   if (msg.includes('task_blocked')) return t('error.taskBlocked')
   if (msg.includes('needs_review')) return t('error.needsReview')
   if (msg.includes('dependency_cycle')) return t('error.dependencyCycle')

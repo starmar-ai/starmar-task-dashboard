@@ -22,3 +22,12 @@ for f in supabase/migrations/*.sql; do
 done
 psql -q -v ON_ERROR_STOP=1 -d "$db" -c "grant select, insert, update, delete on all tables in schema public to authenticated, service_role"
 psql -v ON_ERROR_STOP=1 -d "$db" -f tests/sql/change_requests.test.sql
+
+dropdb --if-exists "$db"
+createdb "$db"
+psql -q -v ON_ERROR_STOP=1 -d "$db" -f tests/sql/supabase_stub.sql
+for f in supabase/migrations/*.sql; do
+  psql -q -v ON_ERROR_STOP=1 -d "$db" -f "$f"
+done
+psql -q -v ON_ERROR_STOP=1 -d "$db" -c "grant select, insert, update, delete on all tables in schema public to authenticated, service_role"
+psql -v ON_ERROR_STOP=1 -d "$db" -f tests/sql/project_archive.test.sql

@@ -34,6 +34,8 @@ export interface ProjectOverview extends Project {
   first_date: string | null
   last_deadline: string | null
   at_risk: boolean
+  /** Latest completed_at among the tasks, only for an archived project whose tasks are all Done. */
+  finished_at: string | null
 }
 
 export interface Label {
@@ -61,6 +63,10 @@ export interface Task {
   review_note: string | null
   review_note_by: string | null
   review_note_at: string | null
+  /** When the task last became Done; empty while it is open. */
+  completed_at?: string | null
+  /** Added by the task list, not stored: the task's project is in the Archive, so the task is read-only. */
+  project_archived?: boolean
   /** Set while the task sits in Trash; trashed tasks only come back through list_trash(). */
   deleted_at?: string | null
   task_labels: { label_id: string }[]
