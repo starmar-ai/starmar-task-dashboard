@@ -48,7 +48,7 @@ export function ProjectStatusChip({ status }: { status: ProjectStatus }) {
 export function RiskChip() {
   const { t } = useI18n()
   return (
-    <span className="chip chip-risk">
+    <span className="chip chip-risk" title={t('projects.atRiskHelp')}>
       <span aria-hidden="true" className="chip-glyph">
         !
       </span>
