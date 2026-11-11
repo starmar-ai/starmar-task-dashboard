@@ -7,6 +7,7 @@ import { SWATCHES, TIMEZONES, type Label, type Locale, type Theme } from '../lib
 import { ConfirmDialog } from '../components/Modal'
 import { ErrorState, LoadingState } from '../components/States'
 import { LabelTag } from '../components/Chips'
+import { NotificationSettingsCard } from '../components/NotificationSettings'
 
 export function SettingsPage() {
   const { t } = useI18n()
@@ -126,6 +127,8 @@ export function SettingsPage() {
           </div>
         </div>
       </section>
+
+      <NotificationSettingsCard />
 
       <section className="card" aria-labelledby="s-labels">
         <h2 id="s-labels">{t('settings.labels')}</h2>

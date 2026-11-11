@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useI18n } from '../lib/i18n'
 import { Avatar } from './Chips'
@@ -8,8 +8,9 @@ import { supabase } from '../lib/supabase'
 import { useRequestsChanged } from '../lib/requestEvents'
 import { purgeExpired } from '../lib/trash'
 import { todayIn } from '../lib/dates'
+import { useUnreadCount } from '../lib/notifications'
 
-function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'workload' | 'requests' | 'team' | 'trash' | 'settings' }) {
+function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calendar' | 'workload' | 'requests' | 'bell' | 'team' | 'trash' | 'settings' }) {
   const common = { stroke: 'currentColor', strokeWidth: 2.2, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -47,6 +48,12 @@ function NavIcon({ name }: { name: 'dashboard' | 'tasks' | 'projects' | 'calenda
         <>
           <path d="M4.5 6.5a2 2 0 012-2h11a2 2 0 012 2v8a2 2 0 01-2 2H11l-4.5 3.5v-3.5a2 2 0 01-2-2z" {...common} />
           <path d="M8.5 10h7M8.5 13h4" {...common} />
+        </>
+      )}
+      {name === 'bell' && (
+        <>
+          <path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z" {...common} />
+          <path d="M10 21a2.2 2.2 0 004 0" {...common} />
         </>
       )}
       {name === 'team' && (
@@ -96,6 +103,9 @@ export function AppShell() {
   }, [loadPending, location.pathname])
   useRequestsChanged(loadPending)
 
+  const unread = useUnreadCount(myId, location.pathname)
+  const unreadLabel = unread > 0 ? t('nav.notificationsCount', { n: unread }) : t('nav.notifications')
+
   // Trash entries older than 30 days go for good once the signed-in user opens the app.
   const timezone = profile?.timezone
   useEffect(() => {
@@ -115,6 +125,14 @@ export function AppShell() {
     <div className="shell">
       <header className="topbar">
         <span className="wordmark">{t('app.name')}</span>
+        <Link to="/notifications" className="bell-link" aria-label={unreadLabel}>
+          <NavIcon name="bell" />
+          {unread > 0 && (
+            <span className="nav-badge" aria-hidden="true">
+              {unread}
+            </span>
+          )}
+        </Link>
         <button
           type="button"
           className="btn btn-secondary btn-sm"
@@ -138,6 +156,17 @@ export function AppShell() {
               <NavLink to="/dashboard" className="nav-link">
                 <NavIcon name="dashboard" />
                 {t('nav.dashboard')}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/notifications" className="nav-link" aria-label={unread > 0 ? unreadLabel : undefined}>
+                <NavIcon name="bell" />
+                {t('nav.notifications')}
+                {unread > 0 && (
+                  <span className="nav-badge" aria-hidden="true">
+                    {unread}
+                  </span>
+                )}
               </NavLink>
             </li>
             <li>

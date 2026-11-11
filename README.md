@@ -46,6 +46,21 @@ Fitur ini butuh tabel baru dan tempat simpan file di Supabase. Jalankan sekali s
 
 Aturannya: semua orang yang bisa lihat tugas boleh komentar, tambah link, dan upload file. Yang boleh hapus link/file: yang menambahkan, pemilik tugas (assignee atau pembuat), atau admin. Komentar hanya bisa dihapus penulisnya atau admin. File maksimal 5 MB, dicek di aplikasi dan di Supabase. Kuota penyimpanan paket gratis Supabase 1 GB untuk semua file.
 
+## Setup: Notifikasi (bel + email)
+
+Bel di aplikasi langsung jalan setelah SQL di langkah 3. Email butuh akun Resend (gratis). Urutannya:
+
+1. **Resend.** Daftar di https://resend.com pakai email yang sama dengan akun dashboard. Buka **API Keys** > **Create API Key**, nama bebas (misal `starmar`), permission **Sending access**. Copy key-nya (mulai dengan `re_`), karena cuma muncul sekali.
+2. **Vercel.** Project > **Settings** > **Environment Variables**. Tambah dua, centang **Production**:
+   - `RESEND_API_KEY` = key dari langkah 1.
+   - `NOTIFY_SECRET` = kata sandi acak panjang bikinan sendiri (minimal 32 karakter, huruf dan angka). Catat, dipakai lagi di langkah 4.
+   Lalu **Deployments** > titik tiga di deploy teratas > **Redeploy**.
+3. **Supabase (skema).** SQL Editor > New query, paste isi `supabase/migrations/20261111030000_notifications.sql`, **Run**. Harus muncul "Success". Ini sekaligus menyalakan pg_cron dan pg_net dan menjadwalkan job tiap jam.
+4. **Supabase (alamat dan rahasia).** New query lagi. Paste isi `supabase/notifications_setup_rahasia.sql`, ganti `GANTI_DENGAN_NOTIFY_SECRET` dengan `NOTIFY_SECRET` dari langkah 2 (harus sama persis), lalu **Run**. Jangan commit file yang sudah diisi.
+5. **Tes.** Di aplikasi, buat tugas Urgent, assign ke orang lain (atau ke admin lain), lalu cek emailnya. Pengirim default `onboarding@resend.dev` di paket gratis Resend **hanya bisa kirim ke email pemilik akun Resend**. Untuk kirim ke Alfarizi dan Fauzi, verifikasi domain di Resend (**Domains**), lalu tambah env `NOTIFY_FROM` = `Starmar AI <notif@domainmu.com>` dan redeploy.
+
+Cara kerjanya: trigger database menulis notifikasi saat ada kejadian (ditugaskan, review, komentar, permintaan perubahan, tidak terblokir lagi). Job tiap jam menulis notifikasi deadline (besok, hari ini, lewat deadline, tugas tim telat lebih dari sehari untuk admin, permintaan perubahan 2 hari kerja belum dijawab) mulai jam 08:00 zona waktu masing-masing, Senin sampai Jumat. Job yang sama memanggil `api/notify.ts` untuk kirim ringkasan email harian jam 08:00, dan email langsung hanya untuk tugas berprioritas Urgent. Semua jalan di server, jadi laptop boleh mati.
+
 ## Struktur
 
 | Folder / file | Isi |
@@ -55,6 +70,7 @@ Aturannya: semua orang yang bisa lihat tugas boleh komentar, tambah link, dan up
 | `src/lib` | Koneksi Supabase, teks UI (ID/EN), tipe data, tanggal, hitungan Dashboard |
 | `tests` | Tes hitungan Dashboard dan aturan status/menunggu tugas (`npm test`) |
 | `supabase/migrations` | Skema database + aturan akses (row level security) |
+| `api/notify.ts` | Fungsi server (Vercel) yang kirim email notifikasi lewat Resend; hanya dipanggil database dengan `NOTIFY_SECRET` |
 | `api/team.ts` | Fungsi server (Vercel) untuk undangan dan cabut akses; satu-satunya tempat kunci rahasia Supabase dipakai |
 | `DESIGN.md` | Arah desain (palet, gaya, dial) |
 
