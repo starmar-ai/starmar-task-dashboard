@@ -3928,15 +3928,3 @@ button.check-title {
   font-weight: 700;
 }
 
-.sidebar-search {
-  width: 100%;
-  justify-content: space-between;
-}
-
-.kbd {
-  padding: 0 0.4rem;
-  border: 2px solid var(--line);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
