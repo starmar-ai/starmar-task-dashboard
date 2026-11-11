@@ -311,6 +311,26 @@ textarea {
   resize: vertical;
 }
 
+/* iOS Safari centers date text and gives it extra inner padding; match the other fields. */
+input[type='date'] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-inline: 0.85rem;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type='date']::-webkit-date-and-time-value {
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  min-height: 1.5em;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--muted);
@@ -1091,6 +1111,10 @@ input[type='radio'] {
 
 .modal-sm {
   width: min(440px, calc(100vw - 2rem));
+}
+
+.modal-lg {
+  width: min(1180px, calc(100vw - 2rem));
 }
 
 .modal::backdrop {
@@ -4356,4 +4380,254 @@ input[type='radio'] {
   border-radius: var(--radius-input);
   background: var(--surface-2);
   font-weight: 600;
+}
+
+/* Ubah Tugas: info utama + bagian (tab di desktop, kartu lipat di HP) ------- */
+
+.tf-layout,
+.tf-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tf-side {
+  min-width: 0;
+}
+
+.tf-tone-teal {
+  --tone: var(--teal-light);
+}
+
+.tf-tone-yellow {
+  --tone: var(--yellow);
+}
+
+.tf-tone-periwinkle {
+  --tone: var(--periwinkle);
+}
+
+.tf-tone-coral {
+  --tone: var(--coral);
+}
+
+.tf-tone-neutral {
+  --tone: var(--lavender);
+}
+
+.tf-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tf-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0.3rem 0.6rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--speed), box-shadow var(--speed), background var(--speed);
+}
+
+.tf-tab::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+.tf-tab:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.tf-tab[aria-selected='true'] {
+  background: var(--tone);
+  color: var(--on-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.tf-tab[aria-selected='true']::before {
+  background: var(--surface);
+}
+
+.tf-badge {
+  min-width: 1.6rem;
+  padding: 0 0.4rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.tf-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--yellow);
+}
+
+.tf-tab .tf-dot {
+  position: absolute;
+  top: -5px;
+  right: -3px;
+}
+
+.tf-panel {
+  position: relative;
+  margin-top: 0.85rem;
+  padding: 1rem;
+  border: 2px solid var(--line);
+  border-top: 8px solid var(--tone);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.tf-panel[hidden],
+.tf-card-body[hidden] {
+  display: none;
+}
+
+.tf-panel .task-extra,
+.tf-card-body .task-extra {
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* The tab or card title already names the section; keep the heading for screen readers. */
+.tf-panel .task-extra-head:not(:has(p)),
+.tf-card-body .task-extra-head:not(:has(p)) {
+  display: none;
+}
+
+.tf-panel .task-extra-head h3,
+.tf-card-body .task-extra-head h3 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tf-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tf-card {
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.tf-card.is-open {
+  box-shadow: var(--shadow-sm);
+}
+
+.tf-card-title {
+  margin: 0;
+  font: inherit;
+}
+
+.tf-card-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.5rem 0.85rem;
+  border: 0;
+  border-left: 10px solid var(--tone);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tf-card.is-open .tf-card-toggle {
+  background: var(--tone);
+  color: var(--on-color);
+}
+
+.tf-card-name {
+  flex: 1;
+}
+
+.tf-chevron {
+  flex: none;
+  transition: transform var(--speed);
+}
+
+.tf-card.is-open .tf-chevron {
+  transform: rotate(180deg);
+}
+
+.tf-card-body {
+  position: relative;
+  padding: 0.85rem;
+  border-top: 2px solid var(--line);
+}
+
+@media (min-width: 900px) {
+  .modal-lg {
+    height: min(780px, calc(100dvh - 2rem));
+  }
+
+  .modal-lg .modal-inner {
+    height: calc(100% - 4px);
+  }
+
+  .modal-lg .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .tf-layout {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 1.5rem;
+    min-height: 0;
+  }
+
+  /* Each column scrolls on its own; the padding keeps the hard shadows from being clipped. */
+  .tf-main,
+  .tf-side {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 8px 8px 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tf-tab,
+  .tf-chevron {
+    transition: none;
+  }
 }
