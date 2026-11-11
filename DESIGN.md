@@ -28,7 +28,7 @@ Gaya flat yang "playful tapi rapi", versi kita sendiri:
 |---|---|---|
 | `indigo` (Midnight Indigo) | `#2B2A6B` | Teks utama, outline, shadow, permukaan di tema gelap |
 | `yellow` (Star Yellow) | `#FFD23F` | Aksen utama: tombol utama, highlight, item aktif |
-| `coral` | `#FF6B57` | Urgent, telat (overdue), flag "Berisiko" |
+| `coral` | `#FF6B57` | Urgent, telat (overdue), flag "Ada yang telat" |
 | `teal` | `#2FA89A` | Selesai (Done), sukses |
 | `periwinkle` | `#8FA8F0` | Sedang berjalan (In Progress), proses |
 | `cream` | `#FAF6EC` | Latar tema terang, area konten |
@@ -41,7 +41,7 @@ Gradient opsional: indigo `#2B2A6B` ke ungu periwinkle.
 
 - **Status task:** To Do (netral, putih/cream dengan outline), In Progress (periwinkle), Review (yellow), Done (teal), Blocked otomatis (coral).
 - **Prioritas:** Low (periwinkle), Medium (cream/netral), High (yellow), Urgent (coral).
-- **Status project:** Perencanaan, Aktif, Ditunda, Selesai, plus flag otomatis "Berisiko" (coral).
+- **Status project:** Perencanaan, Aktif, Ditunda, Selesai, plus flag otomatis "Ada yang telat" (coral).
 - **Warna per project:** tiap project punya warna sendiri (dipakai di gantt, kalender, dan titik warna di nama project). Warna project harus selalu ditemani nama/label, jangan jadi satu-satunya penanda.
 
 ### Aturan kontras (sudah dicek dengan contrast checker antislop)
