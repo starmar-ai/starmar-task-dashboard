@@ -6,7 +6,7 @@ interface Props {
   onClose: () => void
   children: ReactNode
   footer?: ReactNode
-  size?: 'md' | 'sm'
+  size?: 'md' | 'sm' | 'lg'
 }
 
 /** Native <dialog>: focus trap, Escape to close, and inert background come from the browser. */

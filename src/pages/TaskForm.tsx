@@ -20,6 +20,7 @@ import { DateChangeDialog, sameDates } from '../components/TaskDateChange'
 import { emitRequestsChanged } from '../lib/requestEvents'
 import { ChangeRequestDialog } from '../components/ChangeRequestDialog'
 import { TaskChangeRequests } from '../components/ChangeRequestCard'
+import { TaskSections, useMediaQuery, useTaskCounts, type SectionDef } from '../components/TaskSections'
 
 interface Props {
   /** A draft with an empty id opens the form in "new task" mode. */
@@ -61,6 +62,9 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   const [leaving, setLeaving] = useState<{ after?: () => void } | null>(null)
   const navigate = useNavigate()
   const [requestsKey, setRequestsKey] = useState(0)
+  const [commentsSeen, setCommentsSeen] = useState(false)
+  const wide = useMediaQuery('(min-width: 900px)')
+  const { counts, reload: reloadCounts } = useTaskCounts(task.id, profile?.id, !isNew)
 
   const mover = useTaskMover(() => {
     onChanged?.()
@@ -218,42 +222,8 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
   const outsider = (id: string) => !!id && !pickablePeople(people, selectedProject, lookups.members).some((p) => p.id === id)
   const reviewerLocked = !(profile?.role === 'admin' || task.created_by === profile?.id)
 
-  return (
-    <>
-      <Modal
-        title={isNew ? t('taskForm.newTitle') : t('taskForm.editTitle')}
-        onClose={() => requestClose()}
-        footer={
-          editable ? (
-            <>
-              {!isNew && (
-                <button type="button" className="btn btn-ghost btn-danger-text" onClick={() => setConfirmDelete(true)}>
-                  {t('common.delete')}
-                </button>
-              )}
-              <span className="spacer" />
-              <button type="button" className="btn btn-secondary" onClick={() => requestClose()}>
-                {t('common.cancel')}
-              </button>
-              <button type="submit" form="task-form" className="btn btn-primary" disabled={busy}>
-                {busy ? t('common.saving') : isNew ? t('tasks.add') : t('common.save')}
-              </button>
-            </>
-          ) : (
-            <>
-              {!isNew && (
-                <button type="button" className="btn btn-primary" onClick={() => setAsking(true)}>
-                  {t('cr.ask')}
-                </button>
-              )}
-              <span className="spacer" />
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
-                {t('common.close')}
-              </button>
-            </>
-          )
-        }
-      >
+  const mainColumn = (
+        <>
         {!editable && <p className="form-info">{t('taskForm.readOnly')}</p>}
         {task.review_note && live.status !== 'done' && (
           <div className="review-note" role="note">
@@ -450,22 +420,32 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
         {isNew ? (
           <p className="muted small">{t('taskForm.newHint')}</p>
         ) : (
-          <>
-            <p className="muted small">
-              {t('taskForm.createdBy', {
-                name: creator?.full_name || creator?.email || '?',
-                date: formatDate(task.created_at.slice(0, 10), locale),
-              })}
-            </p>
-            <TaskChangeRequests
-              task={task}
-              people={people}
-              refreshKey={requestsKey}
-              onChanged={() => {
-                onChanged?.()
-                onClose()
-              }}
-            />
+          <p className="muted small">
+            {t('taskForm.createdBy', {
+              name: creator?.full_name || creator?.email || '?',
+              date: formatDate(task.created_at.slice(0, 10), locale),
+            })}
+          </p>
+        )}
+        </>
+      )
+
+  const sections: SectionDef[] = isNew
+    ? []
+    : [
+        {
+          key: 'checklist',
+          label: t('checklist.title'),
+          badge: counts.checklistTotal ? `${counts.checklistDone}/${counts.checklistTotal}` : '',
+          tone: 'teal',
+          content: <TaskChecklist task={task} canManage={editable} onChanged={onChanged} />,
+        },
+        {
+          key: 'deps',
+          label: t('taskSections.waiting'),
+          badge: counts.waiting ? String(counts.waiting) : '',
+          tone: 'yellow',
+          content: (
             <TaskDependencies
               task={task}
               canManage={editable}
@@ -475,10 +455,100 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
                 onChanged?.()
               }}
             />
-            <TaskChecklist task={task} canManage={editable} onChanged={onChanged} />
-            <TaskFiles taskId={task.id} canManage={editable} people={people} />
-            <TaskComments taskId={task.id} people={people} />
-          </>
+          ),
+        },
+        {
+          key: 'files',
+          label: t('taskSections.files'),
+          badge: counts.files ? String(counts.files) : '',
+          tone: 'periwinkle',
+          content: <TaskFiles taskId={task.id} canManage={editable} people={people} />,
+        },
+        ...(counts.requestsTotal > 0
+          ? [
+              {
+                key: 'requests',
+                label: t('taskSections.requests'),
+                badge: counts.requestsPending ? String(counts.requestsPending) : String(counts.requestsTotal),
+                tone: 'coral' as const,
+                flag: counts.requestsPending > 0,
+                flagLabel: t('taskSections.pendingRequests'),
+                content: (
+                  <TaskChangeRequests
+                    task={task}
+                    people={people}
+                    refreshKey={requestsKey}
+                    onChanged={() => {
+                      onChanged?.()
+                      onClose()
+                    }}
+                  />
+                ),
+              },
+            ]
+          : []),
+        {
+          key: 'comments',
+          label: t('comments.title'),
+          badge: counts.comments ? String(counts.comments) : '',
+          tone: 'neutral',
+          flag: counts.newComment && !commentsSeen,
+          flagLabel: t('taskSections.newComments'),
+          content: <TaskComments taskId={task.id} people={people} />,
+        },
+      ]
+
+  return (
+    <>
+      <Modal
+        title={isNew ? t('taskForm.newTitle') : t('taskForm.editTitle')}
+        size={isNew ? 'md' : 'lg'}
+        onClose={() => requestClose()}
+        footer={
+          editable ? (
+            <>
+              {!isNew && (
+                <button type="button" className="btn btn-ghost btn-danger-text" onClick={() => setConfirmDelete(true)}>
+                  {t('common.delete')}
+                </button>
+              )}
+              <span className="spacer" />
+              <button type="button" className="btn btn-secondary" onClick={() => requestClose()}>
+                {t('common.cancel')}
+              </button>
+              <button type="submit" form="task-form" className="btn btn-primary" disabled={busy}>
+                {busy ? t('common.saving') : isNew ? t('tasks.add') : t('common.save')}
+              </button>
+            </>
+          ) : (
+            <>
+              {!isNew && (
+                <button type="button" className="btn btn-primary" onClick={() => setAsking(true)}>
+                  {t('cr.ask')}
+                </button>
+              )}
+              <span className="spacer" />
+              <button type="button" className="btn btn-secondary" onClick={onClose}>
+                {t('common.close')}
+              </button>
+            </>
+          )
+        }
+      >
+        {isNew ? (
+          mainColumn
+        ) : (
+          <div className="tf-layout">
+            <div className="tf-main">{mainColumn}</div>
+            <div className="tf-side">
+              <TaskSections
+                sections={sections}
+                wide={wide}
+                onTouched={reloadCounts}
+                onOpened={(key) => key === 'comments' && setCommentsSeen(true)}
+              />
+            </div>
+          </div>
         )}
       </Modal>
       {confirmDelete && (
@@ -523,6 +593,7 @@ export function TaskForm({ task, lookups, onClose, onChanged, onSaved, onDeleted
             setAsking(false)
             emitRequestsChanged()
             setRequestsKey((k) => k + 1)
+            reloadCounts()
           }}
         />
       )}
