@@ -3657,3 +3657,107 @@ button.cal-more:focus-visible {
     justify-content: flex-start;
   }
 }
+
+/* Checklist ------------------------------------------------------------- */
+
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+}
+
+.check-box {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--teal);
+}
+
+.check-title {
+  flex: 1 1 10rem;
+  min-width: 0;
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+button.check-title {
+  cursor: text;
+}
+
+.check-item.is-done .check-title {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.check-edit {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.check-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: auto;
+}
+
+.check-actions .icon-btn:disabled {
+  opacity: 0.35;
+}
+
+.check-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.check-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.check-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.check-badge-bar {
+  width: 44px;
+  height: 8px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.check-badge-bar span {
+  display: block;
+  height: 100%;
+  background: var(--teal);
+}
+
+@media (max-width: 640px) {
+  .check-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

@@ -1,5 +1,6 @@
 import { useI18n } from '../lib/i18n'
 import type { Priority, ProjectStatus, TaskStatus } from '../lib/types'
+import { checklistProgress } from '../lib/checklist'
 
 // Each chip pairs a shape glyph with text, so status never relies on color alone.
 export const STATUS_GLYPH: Record<TaskStatus, string> = {
@@ -83,6 +84,24 @@ export function Avatar({ name }: { name: string }) {
   return (
     <span className="avatar" aria-hidden="true">
       {initials || '?'}
+    </span>
+  )
+}
+
+/** Small "2/5" with a thin bar. Renders nothing for a task without checklist items. */
+export function ChecklistBadge({ items }: { items: { done: boolean }[] | undefined }) {
+  const { t } = useI18n()
+  const p = checklistProgress(items)
+  if (!p) return null
+  return (
+    <span className="check-badge" title={t('checklist.progress', { done: p.done, total: p.total })}>
+      <span className="check-badge-bar" aria-hidden="true">
+        <span style={{ width: `${p.pct}%` }} />
+      </span>
+      <span className="small">
+        <span className="sr-only">{t('checklist.title')} </span>
+        {p.done}/{p.total}
+      </span>
     </span>
   )
 }
