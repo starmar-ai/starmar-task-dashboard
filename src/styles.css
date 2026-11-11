@@ -3513,3 +3513,147 @@ button.cal-more:focus-visible {
     justify-self: start;
   }
 }
+
+/* Notifications ------------------------------------------------------------ */
+
+.notif-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notif {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+/* Unread is carried by the "Baru" chip and the heavier text, not by color alone. */
+.notif.is-unread {
+  box-shadow: var(--shadow-sm);
+}
+
+.notif.is-unread .notif-text {
+  font-weight: 800;
+}
+
+.notif-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.notif-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.notif-tags:empty {
+  display: none;
+}
+
+.chip-new {
+  background: var(--yellow);
+  color: var(--on-color);
+}
+
+.notif-text,
+.notif-quote,
+.notif-meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.notif-text {
+  font-weight: 600;
+}
+
+.notif-quote {
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+}
+
+.notif-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.notif-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+
+.notif-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.settings-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.bell-link {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  color: var(--text);
+}
+
+.bell-link:hover {
+  border-color: var(--line);
+}
+
+.bell-link .nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .notif {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notif-actions {
+    justify-content: flex-start;
+  }
+}
