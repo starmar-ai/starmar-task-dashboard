@@ -40,6 +40,7 @@ export function TasksPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Task | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [selecting, setSelecting] = useState(false)
 
   const timezone = profile?.timezone ?? 'Asia/Jakarta'
   const today = todayIn(timezone)
@@ -144,6 +145,10 @@ export function TasksPage() {
       else next.add(id)
       return next
     })
+  }
+  function stopSelecting() {
+    setSelecting(false)
+    setPicked(new Set())
   }
   const currentProject = projectFilter ? projectById.get(projectFilter) : undefined
   const shownCount = view === 'table' ? visible.length : inScope.length
@@ -305,22 +310,37 @@ export function TasksPage() {
         <EmptyState>{t('tasks.emptyFiltered')}</EmptyState>
       ) : (
         <>
-        {pickedTasks.length > 0 && (
-          <BulkBar tasks={pickedTasks} lookups={lookups} onClear={() => setPicked(new Set())} onChanged={load} />
+        {!selecting && tickable.length > 0 && (
+          <p className="select-row">
+            <button type="button" className="link-btn" onClick={() => setSelecting(true)}>
+              {t('bulk.start')}
+            </button>
+          </p>
         )}
+        {selecting && pickedTasks.length === 0 && (
+          <p className="select-row">
+            <span className="muted">{t('bulk.hint')}</span>
+            <button type="button" className="link-btn" onClick={stopSelecting}>
+              {t('common.cancel')}
+            </button>
+          </p>
+        )}
+        {selecting && pickedTasks.length > 0 && <BulkBar tasks={pickedTasks} lookups={lookups} onClear={stopSelecting} onChanged={load} />}
         <div className="table-wrap">
           <table className="data-table task-table">
             <thead>
               <tr>
-                <th scope="col" className="cell-pick">
-                  <input
-                    type="checkbox"
-                    checked={allPicked}
-                    disabled={tickable.length === 0}
-                    aria-label={t('bulk.selectAll')}
-                    onChange={() => setPicked(allPicked ? new Set() : new Set(tickable.map((x) => x.id)))}
-                  />
-                </th>
+                {selecting && (
+                  <th scope="col" className="cell-pick">
+                    <input
+                      type="checkbox"
+                      checked={allPicked}
+                      disabled={tickable.length === 0}
+                      aria-label={t('bulk.selectAll')}
+                      onChange={() => setPicked(allPicked ? new Set() : new Set(tickable.map((x) => x.id)))}
+                    />
+                  </th>
+                )}
                 <th scope="col">{t('tasks.col.task')}</th>
                 <th scope="col">{t('tasks.col.deadline')}</th>
                 <th scope="col">{t('tasks.col.status')}</th>
@@ -337,16 +357,18 @@ export function TasksPage() {
                 const waiting = task.status === 'blocked' ? waitingTitles(task) : []
                 return (
                   <tr key={task.id} className={`${late > 0 ? 'is-overdue' : ''} ${picked.has(task.id) ? 'is-picked' : ''}`.trim()}>
-                    <td className="cell-pick">
-                      <input
-                        type="checkbox"
-                        checked={picked.has(task.id)}
-                        disabled={!canEditTask(profile, task)}
-                        title={canEditTask(profile, task) ? undefined : t('bulk.noAccess')}
-                        aria-label={t('bulk.selectOne', { title: task.title })}
-                        onChange={() => togglePick(task.id)}
-                      />
-                    </td>
+                    {selecting && (
+                      <td className="cell-pick">
+                        <input
+                          type="checkbox"
+                          checked={picked.has(task.id)}
+                          disabled={!canEditTask(profile, task)}
+                          title={canEditTask(profile, task) ? undefined : t('bulk.noAccess')}
+                          aria-label={t('bulk.selectOne', { title: task.title })}
+                          onChange={() => togglePick(task.id)}
+                        />
+                      </td>
+                    )}
                     <td data-label={t('tasks.col.task')} className="cell-title">
                       <button type="button" className="link-btn task-title-btn" onClick={() => setEditing(task)} aria-label={t('tasks.openTask', { title: task.title })}>
                         {task.title}
