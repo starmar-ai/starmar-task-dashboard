@@ -14,6 +14,8 @@ import { TaskBoard } from '../components/TaskBoard'
 import { Gantt, type GanttEdge, type GanttRow } from '../components/Gantt'
 import { useDateChange } from '../components/TaskDateChange'
 import { canEditTask } from '../lib/permissions'
+import { selectable } from '../lib/bulk'
+import { BulkBar } from '../components/BulkBar'
 import { ReviewButtons, useTaskMover } from '../components/TaskMover'
 import { TaskStatusControl } from '../components/TaskStatusControl'
 import { TaskFilterBar } from '../components/TaskFilterBar'
@@ -37,6 +39,8 @@ export function TasksPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Task | null>(null)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [selecting, setSelecting] = useState(false)
 
   const timezone = profile?.timezone ?? 'Asia/Jakarta'
   const today = todayIn(timezone)
@@ -130,6 +134,22 @@ export function TasksPage() {
       { replace: true },
     )
   }, [openId, taskById, setParams])
+  // Ticked tasks that are still in the list: filtering or a reload quietly drops the rest.
+  const tickable = useMemo(() => selectable(profile, visible), [profile, visible])
+  const pickedTasks = useMemo(() => tickable.filter((x) => picked.has(x.id)), [tickable, picked])
+  const allPicked = tickable.length > 0 && pickedTasks.length === tickable.length
+  function togglePick(id: string) {
+    setPicked((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  function stopSelecting() {
+    setSelecting(false)
+    setPicked(new Set())
+  }
   const currentProject = projectFilter ? projectById.get(projectFilter) : undefined
   const shownCount = view === 'table' ? visible.length : inScope.length
 
@@ -289,10 +309,38 @@ export function TasksPage() {
       ) : visible.length === 0 ? (
         <EmptyState>{t('tasks.emptyFiltered')}</EmptyState>
       ) : (
+        <>
+        {!selecting && tickable.length > 0 && (
+          <p className="select-row">
+            <button type="button" className="link-btn" onClick={() => setSelecting(true)}>
+              {t('bulk.start')}
+            </button>
+          </p>
+        )}
+        {selecting && pickedTasks.length === 0 && (
+          <p className="select-row">
+            <span className="muted">{t('bulk.hint')}</span>
+            <button type="button" className="link-btn" onClick={stopSelecting}>
+              {t('common.cancel')}
+            </button>
+          </p>
+        )}
+        {selecting && pickedTasks.length > 0 && <BulkBar tasks={pickedTasks} lookups={lookups} onClear={stopSelecting} onChanged={load} />}
         <div className="table-wrap">
           <table className="data-table task-table">
             <thead>
               <tr>
+                {selecting && (
+                  <th scope="col" className="cell-pick">
+                    <input
+                      type="checkbox"
+                      checked={allPicked}
+                      disabled={tickable.length === 0}
+                      aria-label={t('bulk.selectAll')}
+                      onChange={() => setPicked(allPicked ? new Set() : new Set(tickable.map((x) => x.id)))}
+                    />
+                  </th>
+                )}
                 <th scope="col">{t('tasks.col.task')}</th>
                 <th scope="col">{t('tasks.col.deadline')}</th>
                 <th scope="col">{t('tasks.col.status')}</th>
@@ -308,7 +356,19 @@ export function TasksPage() {
                 const late = task.status !== 'done' ? daysBetween(task.deadline, today) : 0
                 const waiting = task.status === 'blocked' ? waitingTitles(task) : []
                 return (
-                  <tr key={task.id} className={late > 0 ? 'is-overdue' : ''}>
+                  <tr key={task.id} className={`${late > 0 ? 'is-overdue' : ''} ${picked.has(task.id) ? 'is-picked' : ''}`.trim()}>
+                    {selecting && (
+                      <td className="cell-pick">
+                        <input
+                          type="checkbox"
+                          checked={picked.has(task.id)}
+                          disabled={!canEditTask(profile, task)}
+                          title={canEditTask(profile, task) ? undefined : t('bulk.noAccess')}
+                          aria-label={t('bulk.selectOne', { title: task.title })}
+                          onChange={() => togglePick(task.id)}
+                        />
+                      </td>
+                    )}
                     <td data-label={t('tasks.col.task')} className="cell-title">
                       <button type="button" className="link-btn task-title-btn" onClick={() => setEditing(task)} aria-label={t('tasks.openTask', { title: task.title })}>
                         {task.title}
@@ -358,6 +418,7 @@ export function TasksPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {editing && (
