@@ -28,8 +28,12 @@ interface Props {
 export function TaskFilterBar({ filter, onChange, onApply, onReset, people, labels }: Props) {
   const { t } = useI18n()
   const count = activeCount(filter)
-  const [open, setOpen] = useState(count > 0)
+  const [open, setOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
+  const saved = useSavedFilters()
+  const [naming, setNaming] = useState(false)
+  const savedHidden = saved.error?.code === '42P01' || saved.error?.code === '42501' || /saved_filters/.test(saved.error?.message ?? '')
+  const alreadySaved = saved.filters.some((f) => normalizeQuery(f.query) === filterToQuery(filter))
 
   function applyPreset(key: (typeof PRESETS)[number]['key']) {
     const preset = PRESETS.find((p) => p.key === key)!
@@ -121,6 +125,11 @@ export function TaskFilterBar({ filter, onChange, onApply, onReset, people, labe
             {t('filter.reset')}
           </button>
         )}
+        {isFiltered(filter) && !alreadySaved && !savedHidden && (
+          <button type="button" className="text-link" onClick={() => setNaming(true)}>
+            {t('saved.saveCurrent')}
+          </button>
+        )}
       </div>
 
       {open && (
@@ -189,15 +198,25 @@ export function TaskFilterBar({ filter, onChange, onApply, onReset, people, labe
         </div>
       )}
 
-      <SavedFilters filter={filter} onApply={onApply} />
+      <SavedFilters filter={filter} onApply={onApply} saved={saved} naming={naming} setNaming={setNaming} />
     </section>
   )
 }
 
-function SavedFilters({ filter, onApply }: { filter: TaskFilter; onApply: (query: string) => void }) {
+function SavedFilters({
+  filter,
+  onApply,
+  saved,
+  naming,
+  setNaming,
+}: {
+  filter: TaskFilter
+  onApply: (query: string) => void
+  saved: ReturnType<typeof useSavedFilters>
+  naming: boolean
+  setNaming: (v: boolean) => void
+}) {
   const { t } = useI18n()
-  const saved = useSavedFilters()
-  const [naming, setNaming] = useState(false)
   const [renaming, setRenaming] = useState<SavedFilter | null>(null)
   const [deleting, setDeleting] = useState<SavedFilter | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -243,11 +262,6 @@ function SavedFilters({ filter, onApply }: { filter: TaskFilter; onApply: (query
               ))}
               </ul>
             </>
-          )}
-          {isFiltered(filter) && !activeSaved && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setNaming(true)}>
-              {t('saved.saveCurrent')}
-            </button>
           )}
         </>
       )}
