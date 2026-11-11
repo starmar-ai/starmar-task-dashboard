@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { errorMessage, useI18n } from '../lib/i18n'
 import { useAuth } from '../auth/AuthProvider'
@@ -7,13 +7,13 @@ import { emitTasksChanged } from '../lib/taskEvents'
 import type { Task } from '../lib/types'
 import { TaskForm } from '../pages/TaskForm'
 
-/** Floating "Tambah Tugas" button on every page. It opens a small panel at the bottom center, and "Show details" opens the full form. */
+/** Floating "Tambah Tugas" button on every page. It opens a small panel that grows out of the button (bottom right), and "Show details" opens the full form. */
 export function QuickAddTask({ open, setOpen }: { open: boolean; setOpen: (v: boolean) => void }) {
   const { t } = useI18n()
   return (
     <>
       {!open && (
-        <button type="button" className="fab" onClick={() => setOpen(true)}>
+        <button type="button" className="fab fab-pop" onClick={() => setOpen(true)}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
             <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
           </svg>
@@ -25,8 +25,22 @@ export function QuickAddTask({ open, setOpen }: { open: boolean; setOpen: (v: bo
   )
 }
 
-function Panel({ onClose }: { onClose: () => void }) {
+const EXIT_MS = 200
+
+function Panel({ onClose: closeNow }: { onClose: () => void }) {
   const { t } = useI18n()
+  const [leaving, setLeaving] = useState(false)
+  const detailsRef = useRef(false)
+  const exitTimer = useRef<number>(0)
+  // The panel shrinks back into the button before it unmounts. The full form is a modal, so it closes at once.
+  const onClose = useCallback(() => {
+    if (detailsRef.current || exitTimer.current) return detailsRef.current ? closeNow() : undefined
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (calm) return closeNow()
+    setLeaving(true)
+    exitTimer.current = window.setTimeout(closeNow, EXIT_MS)
+  }, [closeNow])
+  useEffect(() => () => window.clearTimeout(exitTimer.current), [])
   const { profile } = useAuth()
   const lookups = useLookups()
   const titleRef = useRef<HTMLInputElement>(null)
@@ -36,7 +50,11 @@ function Panel({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [added, setAdded] = useState<string | null>(null)
-  const [details, setDetails] = useState(false)
+  const [details, setDetailsState] = useState(false)
+  const setDetails = (v: boolean) => {
+    detailsRef.current = v
+    setDetailsState(v)
+  }
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -91,10 +109,10 @@ function Panel({ onClose }: { onClose: () => void }) {
       <TaskForm
         task={draft}
         lookups={lookups}
-        onClose={() => setDetails(false)}
+        onClose={onClose}
         onSaved={() => {
           emitTasksChanged()
-          onClose()
+          closeNow()
         }}
         onDeleted={() => undefined}
       />
@@ -102,7 +120,7 @@ function Panel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <form className="quick-pop" role="dialog" aria-label={t('tasks.add')} onSubmit={onSubmit}>
+    <form className={`quick-pop${leaving ? ' is-leaving' : ''}`} role="dialog" aria-label={t('tasks.add')} onSubmit={onSubmit}>
       <div className="quick-pop-head">
         <h2>{t('tasks.add')}</h2>
         <button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
